@@ -2,9 +2,10 @@
 
 Imopro est une application desktop JavaFX orientée **offline-first** pour un usage immobilier personnel.
 
-Ce MVP contient actuellement 2 modules fonctionnels :
+Ce MVP contient actuellement 3 modules fonctionnels :
 - **Contacts**
 - **Biens**
+- **Tâches**
 
 L’application suit une architecture modulaire :
 - `imopro-domain` : entités métier pures
@@ -82,12 +83,47 @@ Le champ de recherche filtre la liste par :
 
 ---
 
+## Module Tâche
+
+Le module Tâche sert à piloter les actions quotidiennes et relances.
+
+### Ce que fait le module
+- Afficher la liste des tâches.
+- Rechercher une tâche.
+- Créer une nouvelle tâche.
+- Modifier une tâche.
+- Marquer une tâche comme faite.
+- Supprimer une tâche.
+- Filtrer les tâches par vues rapides : **Toutes**, **Aujourd'hui**, **En retard**, **Cette semaine**.
+
+### Rôle de chaque champ (fiche tâche)
+- **Titre** : intitulé court de l’action.
+- **Description** : détails de la tâche.
+- **Échéance** : date limite au format `YYYY-MM-DD`.
+- **Statut** : `TODO` (à faire) ou `DONE` (fait).
+
+### Rôle de chaque bouton (module Tâche)
+- **Nouvelle tâche** : crée une tâche vide et la sélectionne.
+- **Enregistrer** : sauvegarde les modifications de la tâche.
+- **Marquer fait** : passe la tâche en `DONE` et renseigne la date de complétion.
+- **Supprimer** : supprime définitivement la tâche sélectionnée.
+- **Toutes / Aujourd'hui / En retard / Cette semaine** : applique un filtre rapide sur la liste.
+
+### Recherche (liste Tâche)
+Le champ de recherche filtre la liste par :
+- titre,
+- description,
+- statut.
+
+---
+
 ## Navigation de l’application
 
 Barre latérale gauche :
 - **Contacts** : ouvre le module Contact.
 - **Biens** : ouvre le module Bien.
-- **Tâches / Documents / Pipeline** : placeholders pour les itérations suivantes.
+- **Tâches** : ouvre le module Tâche.
+- **Documents / Pipeline** : placeholders pour les itérations suivantes.
 
 ---
 

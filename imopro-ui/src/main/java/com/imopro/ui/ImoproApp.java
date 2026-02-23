@@ -3,8 +3,10 @@ package com.imopro.ui;
 import com.imopro.application.ContactService;
 import com.imopro.infra.Database;
 import com.imopro.application.PropertyService;
+import com.imopro.application.TaskService;
 import com.imopro.infra.SQLiteContactRepository;
 import com.imopro.infra.SQLitePropertyRepository;
+import com.imopro.infra.SQLiteTaskRepository;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -23,9 +25,11 @@ public class ImoproApp extends Application {
 
         ContactService contactService = new ContactService(new SQLiteContactRepository(database));
         PropertyService propertyService = new PropertyService(new SQLitePropertyRepository(database));
+        TaskService taskService = new TaskService(new SQLiteTaskRepository(database));
 
         ContactView contactView = new ContactView(contactService);
         PropertyView propertyView = new PropertyView(propertyService);
+        TaskView taskView = new TaskView(taskService);
 
         StackPane contentPane = new StackPane();
         contentPane.getChildren().add(contactView.getRoot());
@@ -53,7 +57,7 @@ public class ImoproApp extends Application {
             contentPane.getChildren().setAll(contactView.getRoot());
         });
         propertiesButton.setOnAction(event -> contentPane.getChildren().setAll(propertyView.getRoot()));
-        tasksButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
+        tasksButton.setOnAction(event -> contentPane.getChildren().setAll(taskView.getRoot()));
         documentsButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
         pipelineButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
 
