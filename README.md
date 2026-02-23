@@ -22,6 +22,7 @@ L’application suit une architecture modulaire :
 Dans tous les modules à formulaire (Contacts, Biens, Tâches, Documents), chaque champ texte est validé pendant la saisie.
 
 - En cas de valeur invalide, un message d'erreur rouge s'affiche à droite du champ.
+- La fiche de détail à droite n'est affichée que lorsqu'un élément est en cours de création/édition (sinon un message guide l'utilisateur).
 - Les contrôles couvrent les cas usuels :
   - alphanumérique / texte libre encadré,
   - numériques uniquement (CP, pièces, taille),

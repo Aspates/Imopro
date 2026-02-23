@@ -3,6 +3,7 @@ package com.imopro.ui;
 import com.imopro.application.DocumentService;
 import com.imopro.domain.DocumentItem;
 import com.imopro.infra.LocalDocumentStorage;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -15,6 +16,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -127,6 +129,16 @@ public class DocumentView {
         actions.getChildren().addAll(saveBtn, openBtn, deleteBtn);
 
         container.getChildren().addAll(title, new Separator(), form, actions);
-        return container;
+
+        Label hint = new Label("Sélectionnez ou créez un élément pour modifier la fiche.");
+        StackPane placeholder = new StackPane(hint);
+        placeholder.setPadding(new Insets(24));
+
+        StackPane wrapper = new StackPane(placeholder, container);
+        container.visibleProperty().bind(Bindings.isNotNull(viewModel.selectedDocumentProperty()));
+        container.managedProperty().bind(container.visibleProperty());
+        placeholder.visibleProperty().bind(container.visibleProperty().not());
+        placeholder.managedProperty().bind(placeholder.visibleProperty());
+        return wrapper;
     }
 }

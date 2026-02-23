@@ -2,6 +2,7 @@ package com.imopro.ui;
 
 import com.imopro.application.TaskService;
 import com.imopro.domain.TaskItem;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -16,6 +17,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.regex.Pattern;
@@ -129,6 +131,16 @@ public class TaskView {
         actions.getChildren().addAll(saveBtn, doneBtn, deleteBtn);
 
         container.getChildren().addAll(title, new Separator(), form, actions);
-        return container;
+
+        Label hint = new Label("Sélectionnez ou créez un élément pour modifier la fiche.");
+        StackPane placeholder = new StackPane(hint);
+        placeholder.setPadding(new Insets(24));
+
+        StackPane wrapper = new StackPane(placeholder, container);
+        container.visibleProperty().bind(Bindings.isNotNull(viewModel.selectedTaskProperty()));
+        container.managedProperty().bind(container.visibleProperty());
+        placeholder.visibleProperty().bind(container.visibleProperty().not());
+        placeholder.managedProperty().bind(placeholder.visibleProperty());
+        return wrapper;
     }
 }
