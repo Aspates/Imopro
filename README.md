@@ -2,11 +2,12 @@
 
 Imopro est une application desktop JavaFX orientée **offline-first** pour un usage immobilier personnel.
 
-Ce MVP contient actuellement 4 modules fonctionnels :
+Ce MVP contient actuellement 5 modules fonctionnels :
 - **Contacts**
 - **Biens**
 - **Tâches**
 - **Documents**
+- **Pipeline**
 
 L’application suit une architecture modulaire :
 - `imopro-domain` : entités métier pures
@@ -150,6 +151,28 @@ Le champ de recherche filtre par :
 
 ---
 
+## Module Pipeline
+
+Le module Pipeline propose une vue Kanban simple basée sur les étapes commerciales immobilières.
+
+### Ce que fait le module
+- Afficher les étapes du pipeline en colonnes (Lead → Estimation → Mandat → En vente → Visites → Offre → Compromis → Vendu/Clos).
+- Afficher chaque bien dans sa colonne selon son `statut`.
+- Déplacer un bien vers l'étape précédente/suivante via les boutons fléchés (`←` / `→`).
+- Enregistrer chaque changement d'étape dans `pipeline_event` (audit).
+
+### Rôle des éléments UI (module Pipeline)
+- **Colonnes** : représentent les étapes de vente (`pipeline_stage`).
+- **Cartes bien** : chaque carte représente un bien avec son titre/ville.
+- **Bouton ←** : recule la carte d'une étape.
+- **Bouton →** : avance la carte d'une étape.
+
+### Données manipulées
+- `property.status` = nom d'étape courante.
+- `pipeline_event` = historique daté des mouvements de colonnes.
+
+---
+
 ## Navigation de l’application
 
 Barre latérale gauche :
@@ -157,7 +180,7 @@ Barre latérale gauche :
 - **Biens** : ouvre le module Bien.
 - **Tâches** : ouvre le module Tâche.
 - **Documents** : ouvre le module Documents.
-- **Pipeline** : placeholder pour les itérations suivantes.
+- **Pipeline** : ouvre le module Pipeline (kanban simple).
 
 ---
 
