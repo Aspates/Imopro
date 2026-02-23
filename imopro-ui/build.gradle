@@ -16,5 +16,5 @@ javafx {
 }
 
 application {
-    mainClass = 'com.imopro.ui.ImoproApp'
+    mainClass = 'com.imopro.ui.Launcher'
 }
