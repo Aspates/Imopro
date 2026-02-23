@@ -20,6 +20,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
 import java.io.File;
+import java.util.regex.Pattern;
 
 public class DocumentView {
     private final DocumentViewModel viewModel;
@@ -98,10 +99,16 @@ public class DocumentView {
         TextField tfSize = new TextField();
         tfSize.textProperty().bindBidirectional(viewModel.sizeBytesProperty());
 
-        form.addRow(0, new Label("Nom"), tfName);
+        form.addRow(0, new Label("Nom"), ValidationUtils.attachRegexValidation(tfName,
+                Pattern.compile("[\\p{L}0-9\\s,._'\\-()]{1,140}"), true,
+                "Nom fichier alphanumérique + .,_-()"));
         form.addRow(1, new Label("Chemin relatif"), tfPath);
-        form.addRow(2, new Label("MIME"), tfMime);
-        form.addRow(3, new Label("Taille (octets)"), tfSize);
+        form.addRow(2, new Label("MIME"), ValidationUtils.attachRegexValidation(tfMime,
+                Pattern.compile("[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+"), true,
+                "Format mime attendu (type/sous-type)"));
+        form.addRow(3, new Label("Taille (octets)"), ValidationUtils.attachRegexValidation(tfSize,
+                Pattern.compile("\\d{1,15}"), true,
+                "Chiffres uniquement"));
 
         HBox actions = new HBox(10);
         Button saveBtn = new Button("Enregistrer");

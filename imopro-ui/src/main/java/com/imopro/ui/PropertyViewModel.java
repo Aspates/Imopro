@@ -1,5 +1,6 @@
 package com.imopro.ui;
 
+import com.imopro.application.PipelineService;
 import com.imopro.application.PropertyService;
 import com.imopro.domain.Property;
 import javafx.beans.binding.Bindings;
@@ -13,6 +14,7 @@ import javafx.collections.transformation.FilteredList;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PropertyViewModel {
     private final PropertyService propertyService;
@@ -29,10 +31,15 @@ public class PropertyViewModel {
     private final StringProperty surface = new SimpleStringProperty("");
     private final StringProperty rooms = new SimpleStringProperty("");
     private final StringProperty price = new SimpleStringProperty("");
-    private final StringProperty status = new SimpleStringProperty("Lead");
+    private final StringProperty status = new SimpleStringProperty("Prospect locataire");
+    private final ObservableList<String> availableStatuses = FXCollections.observableArrayList();
 
-    public PropertyViewModel(PropertyService propertyService) {
+    public PropertyViewModel(PropertyService propertyService, PipelineService pipelineService) {
         this.propertyService = propertyService;
+        availableStatuses.setAll(pipelineService.listStages().stream().map(stage -> stage.name()).collect(Collectors.toList()));
+        if (!availableStatuses.isEmpty()) {
+            status.set(availableStatuses.get(0));
+        }
         loadProperties();
         selectedProperty.addListener((obs, oldValue, newValue) -> populateFields(newValue));
         searchQuery.addListener((obs, oldValue, newValue) -> applyFilter(newValue));
@@ -50,6 +57,7 @@ public class PropertyViewModel {
     public StringProperty roomsProperty() { return rooms; }
     public StringProperty priceProperty() { return price; }
     public StringProperty statusProperty() { return status; }
+    public ObservableList<String> availableStatuses() { return availableStatuses; }
 
     public void loadProperties() {
         List<Property> items = propertyService.listProperties();
@@ -108,7 +116,7 @@ public class PropertyViewModel {
             surface.set("");
             rooms.set("");
             price.set("");
-            status.set("Lead");
+            status.set(availableStatuses.isEmpty() ? "" : availableStatuses.get(0));
             return;
         }
 
@@ -120,7 +128,11 @@ public class PropertyViewModel {
         surface.set(p.getSurface() == null ? "" : p.getSurface().toString());
         rooms.set(p.getRooms() == null ? "" : p.getRooms().toString());
         price.set(p.getPrice() == null ? "" : p.getPrice().toPlainString());
-        status.set(nullToEmpty(p.getStatus()));
+        String currentStatus = nullToEmpty(p.getStatus());
+        status.set(currentStatus);
+        if (!currentStatus.isBlank() && !availableStatuses.contains(currentStatus)) {
+            availableStatuses.add(currentStatus);
+        }
     }
 
     private void applyFilter(String query) {

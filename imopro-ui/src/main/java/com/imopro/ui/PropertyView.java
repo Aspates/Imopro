@@ -1,10 +1,12 @@
 package com.imopro.ui;
 
+import com.imopro.application.PipelineService;
 import com.imopro.application.PropertyService;
 import com.imopro.domain.Property;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -16,12 +18,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.regex.Pattern;
+
 public class PropertyView {
     private final PropertyViewModel viewModel;
     private final BorderPane root;
 
-    public PropertyView(PropertyService propertyService) {
-        this.viewModel = new PropertyViewModel(propertyService);
+    public PropertyView(PropertyService propertyService, PipelineService pipelineService) {
+        this.viewModel = new PropertyViewModel(propertyService, pipelineService);
         this.root = new BorderPane();
         root.setPadding(new Insets(16));
         root.getStyleClass().add("content");
@@ -90,17 +94,35 @@ public class PropertyView {
         tfRooms.textProperty().bindBidirectional(viewModel.roomsProperty());
         TextField tfPrice = new TextField();
         tfPrice.textProperty().bindBidirectional(viewModel.priceProperty());
-        TextField tfStatus = new TextField();
-        tfStatus.textProperty().bindBidirectional(viewModel.statusProperty());
+        ComboBox<String> tfStatus = new ComboBox<>();
+        tfStatus.setItems(viewModel.availableStatuses());
+        tfStatus.valueProperty().bindBidirectional(viewModel.statusProperty());
+        tfStatus.setMaxWidth(Double.MAX_VALUE);
 
-        form.addRow(0, new Label("Titre"), tfTitle);
-        form.addRow(1, new Label("Adresse"), tfAddress);
-        form.addRow(2, new Label("Ville"), tfCity);
-        form.addRow(3, new Label("CP"), tfPostalCode);
-        form.addRow(4, new Label("Type"), tfType);
-        form.addRow(5, new Label("Surface"), tfSurface);
-        form.addRow(6, new Label("Pièces"), tfRooms);
-        form.addRow(7, new Label("Prix"), tfPrice);
+        form.addRow(0, new Label("Titre"), ValidationUtils.attachRegexValidation(tfTitle,
+                Pattern.compile("[\\p{L}0-9\\s,.'\\-/#]{1,120}"), true,
+                "Lettres/chiffres/ponctuation simple"));
+        form.addRow(1, new Label("Adresse"), ValidationUtils.attachRegexValidation(tfAddress,
+                Pattern.compile("[\\p{L}0-9\\s,.'\\-/#]{1,180}"), true,
+                "Caractères adresse autorisés"));
+        form.addRow(2, new Label("Ville"), ValidationUtils.attachRegexValidation(tfCity,
+                Pattern.compile("[\\p{L}\\s'\\-]{1,80}"), true,
+                "Lettres/espaces/'/- uniquement"));
+        form.addRow(3, new Label("CP"), ValidationUtils.attachRegexValidation(tfPostalCode,
+                Pattern.compile("\\d{4,10}"), true,
+                "Chiffres uniquement (4 à 10)"));
+        form.addRow(4, new Label("Type"), ValidationUtils.attachRegexValidation(tfType,
+                Pattern.compile("[\\p{L}0-9\\s'\\-]{1,60}"), true,
+                "Lettres/chiffres/espaces"));
+        form.addRow(5, new Label("Surface"), ValidationUtils.attachRegexValidation(tfSurface,
+                Pattern.compile("\\d{1,5}([.,]\\d{1,2})?"), true,
+                "Nombre décimal (ex: 45.5)"));
+        form.addRow(6, new Label("Pièces"), ValidationUtils.attachRegexValidation(tfRooms,
+                Pattern.compile("\\d{1,3}"), true,
+                "Nombre entier attendu"));
+        form.addRow(7, new Label("Prix"), ValidationUtils.attachRegexValidation(tfPrice,
+                Pattern.compile("\\d{1,10}([.,]\\d{1,2})?"), true,
+                "Nombre (ex: 1200.00)"));
         form.addRow(8, new Label("Statut"), tfStatus);
 
         HBox actions = new HBox(12);

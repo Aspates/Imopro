@@ -36,7 +36,7 @@ public class ImoproApp extends Application {
         LocalDocumentStorage documentStorage = new LocalDocumentStorage();
 
         ContactView contactView = new ContactView(contactService);
-        PropertyView propertyView = new PropertyView(propertyService);
+        PropertyView propertyView = new PropertyView(propertyService, pipelineService);
         TaskView taskView = new TaskView(taskService);
         DocumentView documentView = new DocumentView(documentService, documentStorage);
         PipelineView pipelineView = new PipelineView(pipelineService);

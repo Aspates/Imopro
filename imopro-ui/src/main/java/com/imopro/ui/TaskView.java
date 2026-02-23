@@ -18,6 +18,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.regex.Pattern;
+
 public class TaskView {
     private final TaskViewModel viewModel;
     private final BorderPane root;
@@ -99,10 +101,16 @@ public class TaskView {
         tfStatus.setPromptText("TODO ou DONE");
         tfStatus.textProperty().bindBidirectional(viewModel.statusProperty());
 
-        form.addRow(0, new Label("Titre"), tfTitle);
-        form.addRow(1, new Label("Description"), tfDescription);
+        form.addRow(0, new Label("Titre"), ValidationUtils.attachRegexValidation(tfTitle,
+                Pattern.compile("[\\p{L}0-9\\s,.'\\-/#]{1,120}"), true,
+                "Lettres/chiffres/ponctuation simple"));
+        form.addRow(1, new Label("Description"), ValidationUtils.attachValidation(tfDescription,
+                value -> value.length() <= 1200, true,
+                "1200 caractères max"));
         form.addRow(2, new Label("Échéance"), tfDueDate);
-        form.addRow(3, new Label("Statut"), tfStatus);
+        form.addRow(3, new Label("Statut"), ValidationUtils.attachValidation(tfStatus,
+                value -> value.equals("TODO") || value.equals("DONE"), true,
+                "Valeurs autorisées: TODO ou DONE"));
 
         HBox actions = new HBox(10);
         Button saveBtn = new Button("Enregistrer");

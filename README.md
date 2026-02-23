@@ -17,6 +17,21 @@ L’application suit une architecture modulaire :
 
 ---
 
+## Contrôles de saisie (validation en direct)
+
+Dans tous les modules à formulaire (Contacts, Biens, Tâches, Documents), chaque champ texte est validé pendant la saisie.
+
+- En cas de valeur invalide, un message d'erreur rouge s'affiche à droite du champ.
+- Les contrôles couvrent les cas usuels :
+  - alphanumérique / texte libre encadré,
+  - numériques uniquement (CP, pièces, taille),
+  - décimaux (surface, prix),
+  - format e-mail,
+  - format MIME,
+  - valeurs contraintes (ex: statut tâche `TODO`/`DONE`).
+
+---
+
 ## Module Contact
 
 Le module Contact sert à gérer les personnes (propriétaires, acquéreurs potentiels, partenaires, etc.).
@@ -69,7 +84,11 @@ Le module Bien sert à gérer les propriétés immobilières suivies dans l’ou
 - **Surface** : surface (m²) en valeur numérique.
 - **Pièces** : nombre de pièces principales.
 - **Prix** : prix demandé/estimé.
-- **Statut** : état commercial du bien (ex. Lead, Mandat, En vente, etc.).
+- **Statut** : étape courante du pipeline location (sélection via liste déroulante).
+
+### Synchronisation Bien ↔ Pipeline
+- Le champ **Statut** est un **ComboBox** alimenté par les étapes du module Pipeline.
+- Changer le statut dans la fiche Bien déplace automatiquement le bien dans la colonne correspondante du Pipeline (et inversement, un mouvement dans le Pipeline met à jour le statut du bien).
 
 ### Rôle de chaque bouton (module Bien)
 - **Nouveau bien** (colonne de gauche) : crée une fiche bien vide et la sélectionne.

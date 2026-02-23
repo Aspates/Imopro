@@ -17,6 +17,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
+import java.util.regex.Pattern;
+
 public class ContactView {
     private final ContactViewModel viewModel;
     private final BorderPane root;
@@ -94,12 +96,24 @@ public class ContactView {
         notes.textProperty().bindBidirectional(viewModel.notesProperty());
         notes.setPrefRowCount(6);
 
-        form.addRow(0, new Label("Prénom"), firstName);
-        form.addRow(1, new Label("Nom"), lastName);
-        form.addRow(2, new Label("Téléphone"), phone);
-        form.addRow(3, new Label("Email"), email);
-        form.addRow(4, new Label("Adresse"), address);
-        form.addRow(5, new Label("Notes"), notes);
+        form.addRow(0, new Label("Prénom"), ValidationUtils.attachRegexValidation(firstName,
+                Pattern.compile("[\\p{L}0-9\\s'\\-]{1,80}"), true,
+                "Lettres/chiffres/espaces/'/- uniquement"));
+        form.addRow(1, new Label("Nom"), ValidationUtils.attachRegexValidation(lastName,
+                Pattern.compile("[\\p{L}0-9\\s'\\-]{1,80}"), true,
+                "Lettres/chiffres/espaces/'/- uniquement"));
+        form.addRow(2, new Label("Téléphone"), ValidationUtils.attachRegexValidation(phone,
+                Pattern.compile("[0-9+()\\s\\-]{6,20}"), true,
+                "Chiffres et + ( ) - uniquement"));
+        form.addRow(3, new Label("Email"), ValidationUtils.attachRegexValidation(email,
+                Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"), true,
+                "Format email attendu (ex: nom@domaine.fr)"));
+        form.addRow(4, new Label("Adresse"), ValidationUtils.attachRegexValidation(address,
+                Pattern.compile("[\\p{L}0-9\\s,.'\\-/#]{1,180}"), true,
+                "Caractères adresse autorisés"));
+        form.addRow(5, new Label("Notes"), ValidationUtils.attachValidation(notes,
+                value -> value.length() <= 1000, true,
+                "1000 caractères max"));
 
         HBox actions = new HBox(12);
         Button saveButton = new Button("Enregistrer");
