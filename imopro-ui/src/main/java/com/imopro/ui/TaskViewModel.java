@@ -25,7 +25,7 @@ public class TaskViewModel {
     private final StringProperty searchQuery = new SimpleStringProperty("");
     private final StringProperty title = new SimpleStringProperty("");
     private final StringProperty description = new SimpleStringProperty("");
-    private final StringProperty dueDate = new SimpleStringProperty("");
+    private final ObjectProperty<LocalDate> dueDate = new SimpleObjectProperty<>();
     private final StringProperty status = new SimpleStringProperty("TODO");
     private final StringProperty filterMode = new SimpleStringProperty("ALL");
 
@@ -42,7 +42,7 @@ public class TaskViewModel {
     public StringProperty searchQueryProperty() { return searchQuery; }
     public StringProperty titleProperty() { return title; }
     public StringProperty descriptionProperty() { return description; }
-    public StringProperty dueDateProperty() { return dueDate; }
+    public ObjectProperty<LocalDate> dueDateProperty() { return dueDate; }
     public StringProperty statusProperty() { return status; }
 
     public void loadTasks() {
@@ -66,7 +66,7 @@ public class TaskViewModel {
         }
         task.setTitle(title.get());
         task.setDescription(description.get());
-        task.setDueDate(parseDate(dueDate.get()));
+        task.setDueDate(dueDate.get());
         if ("DONE".equalsIgnoreCase(status.get())) {
             task.setStatus("DONE");
             if (task.getCompletedAt() == null) {
@@ -122,13 +122,13 @@ public class TaskViewModel {
         if (task == null) {
             title.set("");
             description.set("");
-            dueDate.set("");
+            dueDate.set(null);
             status.set("TODO");
             return;
         }
         title.set(task.getTitle() == null ? "" : task.getTitle());
         description.set(task.getDescription() == null ? "" : task.getDescription());
-        dueDate.set(task.getDueDate() == null ? "" : task.getDueDate().toString());
+        dueDate.set(task.getDueDate());
         status.set(task.getStatus() == null ? "TODO" : task.getStatus());
     }
 
@@ -155,14 +155,6 @@ public class TaskViewModel {
                 default -> true;
             };
         });
-    }
-
-    private LocalDate parseDate(String raw) {
-        try {
-            return raw == null || raw.isBlank() ? null : LocalDate.parse(raw);
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     private boolean contains(String value, String q) {
