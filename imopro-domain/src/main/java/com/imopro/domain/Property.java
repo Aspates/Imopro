@@ -50,7 +50,7 @@ public class Property {
 
     public static Property newProperty() {
         Instant now = Instant.now();
-        return new Property(UUID.randomUUID(), "", "", "", "", "", null, null, null, "Lead", null, now, now);
+        return new Property(UUID.randomUUID(), "", "", "", "", "", null, null, null, "Prospect locataire", null, now, now);
     }
 
     public UUID getId() { return id; }
