@@ -2,10 +2,11 @@
 
 Imopro est une application desktop JavaFX orientée **offline-first** pour un usage immobilier personnel.
 
-Ce MVP contient actuellement 3 modules fonctionnels :
+Ce MVP contient actuellement 4 modules fonctionnels :
 - **Contacts**
 - **Biens**
 - **Tâches**
+- **Documents**
 
 L’application suit une architecture modulaire :
 - `imopro-domain` : entités métier pures
@@ -117,13 +118,46 @@ Le champ de recherche filtre la liste par :
 
 ---
 
+## Module Documents
+
+Le module Documents sert à rattacher et consulter des fichiers (PDF, photos, etc.) localement.
+
+### Ce que fait le module
+- Importer un fichier depuis la machine.
+- Copier automatiquement le fichier dans `attachments/` (données locales de l'app).
+- Enregistrer les métadonnées en base SQLite (`document`).
+- Rechercher les documents importés.
+- Ouvrir un document via l'application par défaut du système.
+- Modifier des métadonnées (nom, mime, taille) et supprimer un document.
+
+### Rôle de chaque champ (fiche document)
+- **Nom** : nom d'affichage du document.
+- **Chemin relatif** : emplacement relatif dans `attachments/` (lecture seule).
+- **MIME** : type du document (ex. `application/pdf`, `image/jpeg`).
+- **Taille (octets)** : taille du fichier.
+
+### Rôle de chaque bouton (module Documents)
+- **Importer un fichier** : ouvre un sélecteur de fichier et importe le document.
+- **Enregistrer** : sauvegarde les métadonnées modifiées.
+- **Ouvrir** : ouvre le fichier avec l'application par défaut de l'OS.
+- **Supprimer** : supprime le document en base et supprime le fichier local si présent.
+
+### Recherche (liste Documents)
+Le champ de recherche filtre par :
+- nom du fichier,
+- type MIME,
+- chemin relatif.
+
+---
+
 ## Navigation de l’application
 
 Barre latérale gauche :
 - **Contacts** : ouvre le module Contact.
 - **Biens** : ouvre le module Bien.
 - **Tâches** : ouvre le module Tâche.
-- **Documents / Pipeline** : placeholders pour les itérations suivantes.
+- **Documents** : ouvre le module Documents.
+- **Pipeline** : placeholder pour les itérations suivantes.
 
 ---
 

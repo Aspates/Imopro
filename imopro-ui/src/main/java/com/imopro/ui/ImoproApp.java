@@ -2,9 +2,12 @@ package com.imopro.ui;
 
 import com.imopro.application.ContactService;
 import com.imopro.infra.Database;
+import com.imopro.application.DocumentService;
 import com.imopro.application.PropertyService;
 import com.imopro.application.TaskService;
 import com.imopro.infra.SQLiteContactRepository;
+import com.imopro.infra.LocalDocumentStorage;
+import com.imopro.infra.SQLiteDocumentRepository;
 import com.imopro.infra.SQLitePropertyRepository;
 import com.imopro.infra.SQLiteTaskRepository;
 import javafx.application.Application;
@@ -26,10 +29,13 @@ public class ImoproApp extends Application {
         ContactService contactService = new ContactService(new SQLiteContactRepository(database));
         PropertyService propertyService = new PropertyService(new SQLitePropertyRepository(database));
         TaskService taskService = new TaskService(new SQLiteTaskRepository(database));
+        DocumentService documentService = new DocumentService(new SQLiteDocumentRepository(database));
+        LocalDocumentStorage documentStorage = new LocalDocumentStorage();
 
         ContactView contactView = new ContactView(contactService);
         PropertyView propertyView = new PropertyView(propertyService);
         TaskView taskView = new TaskView(taskService);
+        DocumentView documentView = new DocumentView(documentService, documentStorage);
 
         StackPane contentPane = new StackPane();
         contentPane.getChildren().add(contactView.getRoot());
@@ -58,7 +64,7 @@ public class ImoproApp extends Application {
         });
         propertiesButton.setOnAction(event -> contentPane.getChildren().setAll(propertyView.getRoot()));
         tasksButton.setOnAction(event -> contentPane.getChildren().setAll(taskView.getRoot()));
-        documentsButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
+        documentsButton.setOnAction(event -> contentPane.getChildren().setAll(documentView.getRoot()));
         pipelineButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
 
         sidebar.getChildren().addAll(contactsButton, propertiesButton, tasksButton, documentsButton, pipelineButton);
