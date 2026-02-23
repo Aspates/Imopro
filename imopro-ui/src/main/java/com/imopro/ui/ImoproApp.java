@@ -2,7 +2,9 @@ package com.imopro.ui;
 
 import com.imopro.application.ContactService;
 import com.imopro.infra.Database;
+import com.imopro.application.PropertyService;
 import com.imopro.infra.SQLiteContactRepository;
+import com.imopro.infra.SQLitePropertyRepository;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -20,7 +22,10 @@ public class ImoproApp extends Application {
         database.migrate();
 
         ContactService contactService = new ContactService(new SQLiteContactRepository(database));
+        PropertyService propertyService = new PropertyService(new SQLitePropertyRepository(database));
+
         ContactView contactView = new ContactView(contactService);
+        PropertyView propertyView = new PropertyView(propertyService);
 
         StackPane contentPane = new StackPane();
         contentPane.getChildren().add(contactView.getRoot());
@@ -47,7 +52,7 @@ public class ImoproApp extends Application {
         contactsButton.setOnAction(event -> {
             contentPane.getChildren().setAll(contactView.getRoot());
         });
-        propertiesButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
+        propertiesButton.setOnAction(event -> contentPane.getChildren().setAll(propertyView.getRoot()));
         tasksButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
         documentsButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
         pipelineButton.setOnAction(event -> contentPane.getChildren().setAll(placeholderPane));
