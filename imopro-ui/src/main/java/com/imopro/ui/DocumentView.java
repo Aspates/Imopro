@@ -22,6 +22,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
 import java.io.File;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class DocumentView {
@@ -39,6 +40,15 @@ public class DocumentView {
 
     public Node getRoot() {
         return root;
+    }
+
+    public void refresh() {
+        viewModel.loadDocuments();
+    }
+
+    public void openDocument(UUID id) {
+        refresh();
+        viewModel.selectById(id);
     }
 
     private Node buildListPane() {

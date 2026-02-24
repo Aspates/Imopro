@@ -53,7 +53,7 @@ public class RentViewModel {
         this.taskService = taskService;
         this.documentService = documentService;
         refreshAll();
-        selectedRent.addListener((o,a,b)-> populateForm(b));
+        selectedRent.addListener((o, a, b) -> populateForm(b));
     }
 
     public void refreshAll() {
@@ -61,21 +61,24 @@ public class RentViewModel {
         contacts.setAll(contactService.listContacts());
         properties.setAll(propertyService.listProperties());
         rents.setAll(rentService.listRents());
+        if (selectedRent.get() != null) {
+            selectedRent.set(rents.stream().filter(r -> r.getId().equals(selectedRent.get().getId())).findFirst().orElse(null));
+        }
     }
 
-    public ObservableList<Rent> rents(){ return rents; }
-    public ObservableList<Contact> contacts(){ return contacts; }
-    public ObservableList<Property> properties(){ return properties; }
-    public ObservableList<RentTaskRule> rules(){ return rules; }
-    public ObservableList<TaskItem> tasks(){ return tasks; }
-    public ObservableList<DocumentItem> documents(){ return documents; }
-    public ObjectProperty<Rent> selectedRentProperty(){ return selectedRent; }
-    public ObjectProperty<Contact> selectedContactProperty(){ return selectedContact; }
-    public ObjectProperty<Property> selectedPropertyProperty(){ return selectedProperty; }
-    public StringProperty amountProperty(){ return amount; }
-    public ObjectProperty<LocalDate> startDateProperty(){ return startDate; }
-    public ObjectProperty<LocalDate> endDateProperty(){ return endDate; }
-    public StringProperty notesProperty(){ return notes; }
+    public ObservableList<Rent> rents() { return rents; }
+    public ObservableList<Contact> contacts() { return contacts; }
+    public ObservableList<Property> properties() { return properties; }
+    public ObservableList<RentTaskRule> rules() { return rules; }
+    public ObservableList<TaskItem> tasks() { return tasks; }
+    public ObservableList<DocumentItem> documents() { return documents; }
+    public ObjectProperty<Rent> selectedRentProperty() { return selectedRent; }
+    public ObjectProperty<Contact> selectedContactProperty() { return selectedContact; }
+    public ObjectProperty<Property> selectedPropertyProperty() { return selectedProperty; }
+    public StringProperty amountProperty() { return amount; }
+    public ObjectProperty<LocalDate> startDateProperty() { return startDate; }
+    public ObjectProperty<LocalDate> endDateProperty() { return endDate; }
+    public StringProperty notesProperty() { return notes; }
 
     public void createRent() {
         Rent r = Rent.create();
@@ -94,8 +97,7 @@ public class RentViewModel {
         r.setNotes(notes.get());
         rentService.save(r);
         refreshAll();
-        selectedRent.set(r);
-        loadLinked(r);
+        selectedRent.set(rents.stream().filter(it -> it.getId().equals(r.getId())).findFirst().orElse(r));
     }
 
     public void deleteRent() {
@@ -107,14 +109,15 @@ public class RentViewModel {
         rules.clear(); tasks.clear(); documents.clear();
     }
 
-    public void addRule(String frequency, boolean autoRenew, Integer dayOfWeek, Integer dayOfMonth, Integer monthOfYear) {
+    public void addRule(String frequencyCode, boolean autoRenew, Integer dayOfWeek, Integer dayOfMonth, Integer monthOfYear) {
         Rent r = selectedRent.get();
         if (r == null) return;
         RentTaskRule rule = new RentTaskRule(
-                UUID.randomUUID(), r.getId(), frequency, autoRenew,
+                UUID.randomUUID(), r.getId(), frequencyCode, autoRenew,
                 dayOfWeek, dayOfMonth, monthOfYear,
-                "Relance loyer " + r.getId(),
-                "Tâche auto pour le loyer", null, true);
+                "Loyer " + shortId(r.getId()) + " - " + labelForFrequency(frequencyCode),
+                "Tâche générée automatiquement pour le loyer " + shortId(r.getId()),
+                null, true);
         rentService.saveRule(rule);
         loadLinked(r);
     }
@@ -127,7 +130,14 @@ public class RentViewModel {
     }
 
     public String rentDisplay(Rent r) {
-        return "Loyer " + r.getId().toString().substring(0,8) + " - " + (r.getMonthlyAmount() == null ? "?" : r.getMonthlyAmount());
+        return "Loyer " + shortId(r.getId()) + " - " + (r.getMonthlyAmount() == null ? "?" : r.getMonthlyAmount());
+    }
+
+    public String ruleDisplay(RentTaskRule r) {
+        return labelForFrequency(r.frequency()) + " | auto=" + (r.autoRenew() ? "oui" : "non")
+                + " | jS=" + (r.dayOfWeek() == null ? "-" : r.dayOfWeek())
+                + " | jM=" + (r.dayOfMonth() == null ? "-" : r.dayOfMonth())
+                + " | m=" + (r.monthOfYear() == null ? "-" : r.monthOfYear());
     }
 
     private void populateForm(Rent r) {
@@ -136,8 +146,8 @@ public class RentViewModel {
             rules.clear(); tasks.clear(); documents.clear();
             return;
         }
-        selectedContact.set(contacts.stream().filter(c->c.getId().equals(r.getContactId())).findFirst().orElse(null));
-        selectedProperty.set(properties.stream().filter(p->p.getId().equals(r.getPropertyId())).findFirst().orElse(null));
+        selectedContact.set(contacts.stream().filter(c -> c.getId().equals(r.getContactId())).findFirst().orElse(null));
+        selectedProperty.set(properties.stream().filter(p -> p.getId().equals(r.getPropertyId())).findFirst().orElse(null));
         amount.set(r.getMonthlyAmount() == null ? "" : r.getMonthlyAmount().toPlainString());
         startDate.set(r.getStartDate());
         endDate.set(r.getEndDate());
@@ -148,10 +158,21 @@ public class RentViewModel {
     private void loadLinked(Rent r) {
         rules.setAll(rentService.listRules(r.getId()));
         List<TaskItem> allTasks = taskService.listTasks();
-        tasks.setAll(allTasks.stream().filter(t -> t.getId() != null).filter(t -> true).toList());
+        tasks.setAll(allTasks.stream().filter(t -> r.getId().equals(t.getRentId())).toList());
         List<DocumentItem> allDocs = documentService.listDocuments();
-        documents.setAll(allDocs.stream().filter(d -> true).toList());
+        documents.setAll(allDocs.stream().filter(d -> r.getId().equals(d.getRentId())).toList());
     }
 
-    private BigDecimal parse(String v){ try{return (v==null||v.isBlank())?null:new BigDecimal(v);}catch(Exception e){return null;} }
+    private BigDecimal parse(String v) { try { return (v == null || v.isBlank()) ? null : new BigDecimal(v); } catch (Exception e) { return null; } }
+    private String shortId(UUID id) { return id.toString().substring(0, 8); }
+
+    private String labelForFrequency(String code) {
+        return switch (code) {
+            case "WEEKLY" -> "Hebdomadaire";
+            case "MONTHLY" -> "Mensuelle";
+            case "QUARTERLY" -> "Trimestrielle";
+            case "YEARLY" -> "Annuelle";
+            default -> code;
+        };
+    }
 }

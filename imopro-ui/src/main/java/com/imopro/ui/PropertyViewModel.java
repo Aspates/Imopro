@@ -14,6 +14,7 @@ import javafx.collections.transformation.FilteredList;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class PropertyViewModel {
@@ -95,6 +96,11 @@ public class PropertyViewModel {
         propertyService.save(p);
         loadProperties();
         selectedProperty.set(p);
+    }
+
+    public void selectById(UUID id) {
+        if (id == null) return;
+        properties.stream().filter(p -> p.getId().equals(id)).findFirst().ifPresent(selectedProperty::set);
     }
 
     public void deleteSelected() {

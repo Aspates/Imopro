@@ -55,10 +55,10 @@ public class ImoproApp extends Application {
         DocumentView documentView = new DocumentView(documentService, documentStorage);
         PipelineView pipelineView = new PipelineView(pipelineService);
         RentView rentView = new RentView(rentService, contactService, propertyService, taskService, documentService,
-                () -> contentPane.getChildren().setAll(contactView.getRoot()),
-                () -> { propertyView.refresh(); contentPane.getChildren().setAll(propertyView.getRoot()); },
-                () -> contentPane.getChildren().setAll(taskView.getRoot()),
-                () -> contentPane.getChildren().setAll(documentView.getRoot()));
+                contactId -> { contactView.openContact(contactId); contentPane.getChildren().setAll(contactView.getRoot()); },
+                propertyId -> { propertyView.openProperty(propertyId); contentPane.getChildren().setAll(propertyView.getRoot()); },
+                taskId -> { taskView.openTask(taskId); contentPane.getChildren().setAll(taskView.getRoot()); },
+                documentId -> { documentView.openDocument(documentId); contentPane.getChildren().setAll(documentView.getRoot()); });
 
         contentPane.getChildren().add(contactView.getRoot());
 

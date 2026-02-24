@@ -19,6 +19,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class ContactView {
@@ -36,6 +37,15 @@ public class ContactView {
 
     public Node getRoot() {
         return root;
+    }
+
+    public void refresh() {
+        viewModel.loadContacts();
+    }
+
+    public void openContact(UUID id) {
+        refresh();
+        viewModel.selectById(id);
     }
 
     private Node buildListPane() {

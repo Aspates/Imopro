@@ -20,6 +20,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class PropertyView {
@@ -41,6 +42,11 @@ public class PropertyView {
 
     public void refresh() {
         viewModel.loadProperties();
+    }
+
+    public void openProperty(UUID id) {
+        refresh();
+        viewModel.selectById(id);
     }
 
     private Node buildListPane() {

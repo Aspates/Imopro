@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public class TaskViewModel {
     private final TaskService taskService;
@@ -91,6 +92,11 @@ public class TaskViewModel {
         taskService.save(task);
         loadTasks();
         selectedTask.set(task);
+    }
+
+    public void selectById(UUID id) {
+        if (id == null) return;
+        tasks.stream().filter(t -> t.getId().equals(id)).findFirst().ifPresent(selectedTask::set);
     }
 
     public void deleteSelectedTask() {

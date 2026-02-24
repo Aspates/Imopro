@@ -15,6 +15,7 @@ import javafx.collections.transformation.FilteredList;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 public class DocumentViewModel {
     private final DocumentService documentService;
@@ -84,6 +85,11 @@ public class DocumentViewModel {
         DocumentItem item = selectedDocument.get();
         if (item == null || item.getFilePath() == null || item.getFilePath().isBlank()) return;
         storage.open(item.getFilePath());
+    }
+
+    public void selectById(UUID id) {
+        if (id == null) return;
+        documents.stream().filter(d -> d.getId().equals(id)).findFirst().ifPresent(selectedDocument::set);
     }
 
     public void deleteSelected() {

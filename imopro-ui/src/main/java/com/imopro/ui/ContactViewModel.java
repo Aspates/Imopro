@@ -13,6 +13,7 @@ import javafx.collections.transformation.FilteredList;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public class ContactViewModel {
     private final ContactService contactService;
@@ -101,6 +102,11 @@ public class ContactViewModel {
         contact.touchUpdatedAt();
         contactService.save(contact);
         refreshOrdering();
+    }
+
+    public void selectById(UUID id) {
+        if (id == null) return;
+        contacts.stream().filter(c -> c.getId().equals(id)).findFirst().ifPresent(selectedContact::set);
     }
 
     public void deleteSelectedContact() {
