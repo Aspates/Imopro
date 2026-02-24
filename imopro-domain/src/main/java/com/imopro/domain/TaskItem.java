@@ -13,6 +13,7 @@ public class TaskItem {
     private LocalDate dueDate;
     private final Instant createdAt;
     private Instant completedAt;
+    private UUID rentId;
 
     public TaskItem(UUID id,
                     String title,
@@ -20,7 +21,8 @@ public class TaskItem {
                     String status,
                     LocalDate dueDate,
                     Instant createdAt,
-                    Instant completedAt) {
+                    Instant completedAt,
+                    UUID rentId) {
         this.id = Objects.requireNonNull(id, "id");
         this.title = title;
         this.description = description;
@@ -28,10 +30,11 @@ public class TaskItem {
         this.dueDate = dueDate;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
         this.completedAt = completedAt;
+        this.rentId = rentId;
     }
 
     public static TaskItem newTask() {
-        return new TaskItem(UUID.randomUUID(), "", "", "TODO", null, Instant.now(), null);
+        return new TaskItem(UUID.randomUUID(), "", "", "TODO", null, Instant.now(), null, null);
     }
 
     public UUID getId() { return id; }
@@ -46,6 +49,8 @@ public class TaskItem {
     public Instant getCreatedAt() { return createdAt; }
     public Instant getCompletedAt() { return completedAt; }
     public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
+    public UUID getRentId() { return rentId; }
+    public void setRentId(UUID rentId) { this.rentId = rentId; }
 
     public void markDone() {
         this.status = "DONE";

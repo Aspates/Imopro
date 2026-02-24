@@ -2,12 +2,13 @@
 
 Imopro est une application desktop JavaFX orientée **offline-first** pour un usage immobilier personnel.
 
-Ce MVP contient actuellement 5 modules fonctionnels :
+Ce MVP contient actuellement 6 modules fonctionnels :
 - **Contacts**
 - **Biens**
 - **Tâches**
 - **Documents**
 - **Pipeline**
+- **Loyers**
 
 L’application suit une architecture modulaire :
 - `imopro-domain` : entités métier pures
@@ -44,6 +45,20 @@ Champs concernés :
 - Type
 
 Ces valeurs sont automatiquement injectées lors d'un clic sur **Nouveau bien**.
+
+---
+
+## Module Loyer
+
+Le module Loyer permet de gérer les loyers avec un CRUD, en lien avec un locataire (Contact) et un bien (Property).
+
+### Fonctionnalités
+- CRUD des loyers
+- Jointure vers **Contact** (locataire)
+- Jointure vers **Bien**
+- Règles de tâches automatiques (hebdo/mensuel/trimestriel/annuel) avec renouvellement activable
+- Génération automatique des tâches à échéance depuis les règles actives
+- Boutons de navigation rapide vers Contacts/Biens/Tâches/Documents
 
 ---
 
@@ -215,6 +230,7 @@ Barre latérale gauche :
 - **Tâches** : ouvre le module Tâche.
 - **Documents** : ouvre le module Documents.
 - **Pipeline** : ouvre le module Pipeline (kanban simple).
+- **Loyers** : ouvre le module Loyer.
 
 ---
 

@@ -5,6 +5,7 @@ import com.imopro.application.DocumentService;
 import com.imopro.application.PipelineService;
 import com.imopro.application.PropertyService;
 import com.imopro.application.TaskService;
+import com.imopro.application.RentService;
 import com.imopro.infra.Database;
 import com.imopro.infra.LocalDocumentStorage;
 import com.imopro.infra.SQLiteContactRepository;
@@ -12,6 +13,7 @@ import com.imopro.infra.SQLiteDocumentRepository;
 import com.imopro.infra.SQLitePipelineRepository;
 import com.imopro.infra.SQLitePropertyRepository;
 import com.imopro.infra.SQLiteTaskRepository;
+import com.imopro.infra.SQLiteRentRepository;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -39,18 +41,25 @@ public class ImoproApp extends Application {
         ContactService contactService = new ContactService(new SQLiteContactRepository(database));
         PropertyService propertyService = new PropertyService(new SQLitePropertyRepository(database));
         TaskService taskService = new TaskService(new SQLiteTaskRepository(database));
+        RentService rentService = new RentService(new SQLiteRentRepository(database));
         DocumentService documentService = new DocumentService(new SQLiteDocumentRepository(database));
         PipelineService pipelineService = new PipelineService(new SQLitePipelineRepository(database));
         LocalDocumentStorage documentStorage = new LocalDocumentStorage();
         PropertyDefaultsStore defaultsStore = new PropertyDefaultsStore();
+
+        StackPane contentPane = new StackPane();
 
         ContactView contactView = new ContactView(contactService);
         PropertyView propertyView = new PropertyView(propertyService, pipelineService, defaultsStore);
         TaskView taskView = new TaskView(taskService);
         DocumentView documentView = new DocumentView(documentService, documentStorage);
         PipelineView pipelineView = new PipelineView(pipelineService);
+        RentView rentView = new RentView(rentService, contactService, propertyService, taskService, documentService,
+                () -> contentPane.getChildren().setAll(contactView.getRoot()),
+                () -> { propertyView.refresh(); contentPane.getChildren().setAll(propertyView.getRoot()); },
+                () -> contentPane.getChildren().setAll(taskView.getRoot()),
+                () -> contentPane.getChildren().setAll(documentView.getRoot()));
 
-        StackPane contentPane = new StackPane();
         contentPane.getChildren().add(contactView.getRoot());
 
         VBox sidebar = new VBox(12);
@@ -62,12 +71,14 @@ public class ImoproApp extends Application {
         Button tasksButton = new Button("Tâches");
         Button documentsButton = new Button("Documents");
         Button pipelineButton = new Button("Pipeline");
+        Button rentsButton = new Button("Loyers");
 
         contactsButton.setMaxWidth(Double.MAX_VALUE);
         propertiesButton.setMaxWidth(Double.MAX_VALUE);
         tasksButton.setMaxWidth(Double.MAX_VALUE);
         documentsButton.setMaxWidth(Double.MAX_VALUE);
         pipelineButton.setMaxWidth(Double.MAX_VALUE);
+        rentsButton.setMaxWidth(Double.MAX_VALUE);
 
         contactsButton.setOnAction(event -> contentPane.getChildren().setAll(contactView.getRoot()));
         propertiesButton.setOnAction(event -> {
@@ -80,8 +91,12 @@ public class ImoproApp extends Application {
             pipelineView.refresh();
             contentPane.getChildren().setAll(pipelineView.getRoot());
         });
+        rentsButton.setOnAction(event -> {
+            rentView.refresh();
+            contentPane.getChildren().setAll(rentView.getRoot());
+        });
 
-        sidebar.getChildren().addAll(contactsButton, propertiesButton, tasksButton, documentsButton, pipelineButton);
+        sidebar.getChildren().addAll(contactsButton, propertiesButton, tasksButton, documentsButton, pipelineButton, rentsButton);
 
         MenuBar menuBar = buildMenuBar(defaultsStore);
 

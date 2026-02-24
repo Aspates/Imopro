@@ -23,7 +23,7 @@ public class SQLiteDocumentRepository implements DocumentRepository {
     @Override
     public List<DocumentItem> findAll() {
         String sql = """
-                SELECT id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, created_at
+                SELECT id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, rent_id, created_at
                 FROM document
                 ORDER BY created_at DESC
                 """;
@@ -43,7 +43,7 @@ public class SQLiteDocumentRepository implements DocumentRepository {
     @Override
     public Optional<DocumentItem> findById(UUID id) {
         String sql = """
-                SELECT id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, created_at
+                SELECT id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, rent_id, created_at
                 FROM document
                 WHERE id = ?
                 """;
@@ -64,15 +64,16 @@ public class SQLiteDocumentRepository implements DocumentRepository {
     @Override
     public void save(DocumentItem document) {
         String sql = """
-                INSERT INTO document (id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO document (id, file_name, file_path, mime_type, size_bytes, contact_id, property_id, rent_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     file_name = excluded.file_name,
                     file_path = excluded.file_path,
                     mime_type = excluded.mime_type,
                     size_bytes = excluded.size_bytes,
                     contact_id = excluded.contact_id,
-                    property_id = excluded.property_id
+                    property_id = excluded.property_id,
+                    rent_id = excluded.rent_id
                 """;
         try (Connection c = database.openConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -83,7 +84,8 @@ public class SQLiteDocumentRepository implements DocumentRepository {
             if (document.getSizeBytes() == null) ps.setNull(5, java.sql.Types.BIGINT); else ps.setLong(5, document.getSizeBytes());
             if (document.getContactId() == null) ps.setNull(6, java.sql.Types.VARCHAR); else ps.setString(6, document.getContactId().toString());
             if (document.getPropertyId() == null) ps.setNull(7, java.sql.Types.VARCHAR); else ps.setString(7, document.getPropertyId().toString());
-            ps.setString(8, document.getCreatedAt().toString());
+            if (document.getRentId() == null) ps.setNull(8, java.sql.Types.VARCHAR); else ps.setString(8, document.getRentId().toString());
+            ps.setString(9, document.getCreatedAt().toString());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to save document", e);
@@ -105,6 +107,7 @@ public class SQLiteDocumentRepository implements DocumentRepository {
     private DocumentItem mapDocument(ResultSet rs) throws SQLException {
         String contactRaw = rs.getString("contact_id");
         String propertyRaw = rs.getString("property_id");
+        String rentRaw = rs.getString("rent_id");
         return new DocumentItem(
                 UUID.fromString(rs.getString("id")),
                 rs.getString("file_name"),
@@ -113,6 +116,7 @@ public class SQLiteDocumentRepository implements DocumentRepository {
                 rs.getObject("size_bytes") == null ? null : rs.getLong("size_bytes"),
                 contactRaw == null ? null : UUID.fromString(contactRaw),
                 propertyRaw == null ? null : UUID.fromString(propertyRaw),
+                rentRaw == null ? null : UUID.fromString(rentRaw),
                 Instant.parse(rs.getString("created_at"))
         );
     }

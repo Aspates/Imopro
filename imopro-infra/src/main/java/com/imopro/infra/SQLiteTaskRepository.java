@@ -24,7 +24,7 @@ public class SQLiteTaskRepository implements TaskRepository {
     @Override
     public List<TaskItem> findAll() {
         String sql = """
-                SELECT id, title, description, status, due_date, created_at, completed_at
+                SELECT id, title, description, status, due_date, created_at, completed_at, rent_id
                 FROM task
                 ORDER BY CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
                          due_date ASC,
@@ -46,7 +46,7 @@ public class SQLiteTaskRepository implements TaskRepository {
     @Override
     public Optional<TaskItem> findById(UUID id) {
         String sql = """
-                SELECT id, title, description, status, due_date, created_at, completed_at
+                SELECT id, title, description, status, due_date, created_at, completed_at, rent_id
                 FROM task
                 WHERE id = ?
                 """;
@@ -67,14 +67,15 @@ public class SQLiteTaskRepository implements TaskRepository {
     @Override
     public void save(TaskItem task) {
         String sql = """
-                INSERT INTO task (id, title, description, status, due_date, created_at, completed_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO task (id, title, description, status, due_date, created_at, completed_at, rent_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     title = excluded.title,
                     description = excluded.description,
                     status = excluded.status,
                     due_date = excluded.due_date,
-                    completed_at = excluded.completed_at
+                    completed_at = excluded.completed_at,
+                    rent_id = excluded.rent_id
                 """;
         try (Connection c = database.openConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -85,6 +86,7 @@ public class SQLiteTaskRepository implements TaskRepository {
             if (task.getDueDate() == null) ps.setNull(5, java.sql.Types.VARCHAR); else ps.setString(5, task.getDueDate().toString());
             ps.setString(6, task.getCreatedAt().toString());
             if (task.getCompletedAt() == null) ps.setNull(7, java.sql.Types.VARCHAR); else ps.setString(7, task.getCompletedAt().toString());
+            if (task.getRentId() == null) ps.setNull(8, java.sql.Types.VARCHAR); else ps.setString(8, task.getRentId().toString());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Unable to save task", e);
@@ -106,6 +108,7 @@ public class SQLiteTaskRepository implements TaskRepository {
     private TaskItem mapTask(ResultSet rs) throws SQLException {
         String due = rs.getString("due_date");
         String completed = rs.getString("completed_at");
+        String rentRaw = rs.getString("rent_id");
         return new TaskItem(
                 UUID.fromString(rs.getString("id")),
                 rs.getString("title"),
@@ -113,7 +116,8 @@ public class SQLiteTaskRepository implements TaskRepository {
                 rs.getString("status"),
                 due == null ? null : LocalDate.parse(due),
                 Instant.parse(rs.getString("created_at")),
-                completed == null ? null : Instant.parse(completed)
+                completed == null ? null : Instant.parse(completed),
+                rentRaw == null ? null : UUID.fromString(rentRaw)
         );
     }
 }

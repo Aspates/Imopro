@@ -12,6 +12,7 @@ public class DocumentItem {
     private Long sizeBytes;
     private UUID contactId;
     private UUID propertyId;
+    private UUID rentId;
     private final Instant createdAt;
 
     public DocumentItem(UUID id,
@@ -21,6 +22,7 @@ public class DocumentItem {
                         Long sizeBytes,
                         UUID contactId,
                         UUID propertyId,
+                        UUID rentId,
                         Instant createdAt) {
         this.id = Objects.requireNonNull(id, "id");
         this.fileName = fileName;
@@ -29,11 +31,12 @@ public class DocumentItem {
         this.sizeBytes = sizeBytes;
         this.contactId = contactId;
         this.propertyId = propertyId;
+        this.rentId = rentId;
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt");
     }
 
     public static DocumentItem newDocument() {
-        return new DocumentItem(UUID.randomUUID(), "", "", "application/octet-stream", 0L, null, null, Instant.now());
+        return new DocumentItem(UUID.randomUUID(), "", "", "application/octet-stream", 0L, null, null, null, Instant.now());
     }
 
     public UUID getId() { return id; }
@@ -49,6 +52,8 @@ public class DocumentItem {
     public void setContactId(UUID contactId) { this.contactId = contactId; }
     public UUID getPropertyId() { return propertyId; }
     public void setPropertyId(UUID propertyId) { this.propertyId = propertyId; }
+    public UUID getRentId() { return rentId; }
+    public void setRentId(UUID rentId) { this.rentId = rentId; }
     public Instant getCreatedAt() { return createdAt; }
 
     public String displayName() {
