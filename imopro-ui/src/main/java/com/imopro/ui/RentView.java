@@ -144,14 +144,11 @@ public class RentView {
         ComboBox<Integer> dayOfMonth = new ComboBox<>(FXCollections.observableArrayList());
         for (int i = 1; i <= 31; i++) dayOfMonth.getItems().add(i);
         dayOfMonth.setValue(1);
-        ComboBox<Integer> monthOfYear = new ComboBox<>(FXCollections.observableArrayList());
-        for (int i = 1; i <= 12; i++) monthOfYear.getItems().add(i);
-        monthOfYear.setValue(1);
-        ComboBox<Integer> monthInPeriod = new ComboBox<>(FXCollections.observableArrayList(1, 2, 3));
+        ComboBox<Integer> monthInPeriod = new ComboBox<>(FXCollections.observableArrayList());
         monthInPeriod.setValue(1);
 
-        frequency.valueProperty().addListener((o, a, b) -> applyFrequencyVisibility(b, dayOfWeek, dayOfMonth, monthInPeriod));
-        applyFrequencyVisibility(frequency.getValue(), dayOfWeek, dayOfMonth, monthInPeriod);
+        frequency.valueProperty().addListener((o, a, b) -> applyFrequencySettings(b, dayOfWeek, dayOfMonth, monthInPeriod));
+        applyFrequencySettings(frequency.getValue(), dayOfWeek, dayOfMonth, monthInPeriod);
 
         Button addRule = new Button("Ajouter règle");
         addRule.setOnAction(e -> viewModel.addRule(
@@ -218,11 +215,25 @@ public class RentView {
         return table;
     }
 
-    private void applyFrequencyVisibility(String value, Node dayOfWeek, Node dayOfMonth, Node monthInPeriod) {
+    private void applyFrequencySettings(String value, Node dayOfWeek, Node dayOfMonth, ComboBox<Integer> monthInPeriod) {
         boolean weekly = "Hebdomadaire".equals(value);
         boolean monthly = "Mensuelle".equals(value);
         boolean quarterly = "Trimestrielle".equals(value);
         boolean yearly = "Annuelle".equals(value);
+
+        if (quarterly) {
+            monthInPeriod.setItems(FXCollections.observableArrayList(1, 2, 3));
+        } else if (yearly) {
+            monthInPeriod.setItems(FXCollections.observableArrayList());
+            for (int i = 1; i <= 12; i++) monthInPeriod.getItems().add(i);
+        } else {
+            monthInPeriod.getItems().clear();
+        }
+
+        if (!monthInPeriod.getItems().isEmpty() && !monthInPeriod.getItems().contains(monthInPeriod.getValue())) {
+            monthInPeriod.setValue(1);
+        }
+
         setVisibleManaged(dayOfWeek, weekly);
         setVisibleManaged(dayOfMonth, monthly || quarterly || yearly);
         setVisibleManaged(monthInPeriod, quarterly || yearly);
