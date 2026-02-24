@@ -130,7 +130,7 @@ public class RentView {
         return c;
     }
 
-    private VBox buildRulesBox(Consumer<UUID> goTask, Consumer<UUID> goDocument) {
+    private Node buildRulesBox(Consumer<UUID> goTask, Consumer<UUID> goDocument) {
         VBox box = new VBox(8);
         Label l = new Label("Tâches automatiques du loyer");
 
