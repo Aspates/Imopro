@@ -33,6 +33,20 @@ Dans tous les modules à formulaire (Contacts, Biens, Tâches, Documents), chaqu
 
 ---
 
+## Valeurs par défaut (module Bien)
+
+Une entrée de menu **Paramètres → Valeurs par défaut** permet de définir des valeurs pré-remplies pour la création d'un nouveau bien.
+
+Champs concernés :
+- Adresse
+- Ville
+- CP
+- Type
+
+Ces valeurs sont automatiquement injectées lors d'un clic sur **Nouveau bien**.
+
+---
+
 ## Module Contact
 
 Le module Contact sert à gérer les personnes (propriétaires, acquéreurs potentiels, partenaires, etc.).

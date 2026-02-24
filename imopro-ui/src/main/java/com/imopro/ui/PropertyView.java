@@ -26,8 +26,8 @@ public class PropertyView {
     private final PropertyViewModel viewModel;
     private final BorderPane root;
 
-    public PropertyView(PropertyService propertyService, PipelineService pipelineService) {
-        this.viewModel = new PropertyViewModel(propertyService, pipelineService);
+    public PropertyView(PropertyService propertyService, PipelineService pipelineService, PropertyDefaultsStore defaultsStore) {
+        this.viewModel = new PropertyViewModel(propertyService, pipelineService, defaultsStore);
         this.root = new BorderPane();
         root.setPadding(new Insets(16));
         root.getStyleClass().add("content");

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 public class PropertyViewModel {
     private final PropertyService propertyService;
+    private final PropertyDefaultsStore defaultsStore;
     private final ObservableList<Property> properties = FXCollections.observableArrayList();
     private final FilteredList<Property> filteredProperties = new FilteredList<>(properties, p -> true);
     private final ObjectProperty<Property> selectedProperty = new SimpleObjectProperty<>();
@@ -34,8 +35,9 @@ public class PropertyViewModel {
     private final StringProperty status = new SimpleStringProperty("Prospect locataire");
     private final ObservableList<String> availableStatuses = FXCollections.observableArrayList();
 
-    public PropertyViewModel(PropertyService propertyService, PipelineService pipelineService) {
+    public PropertyViewModel(PropertyService propertyService, PipelineService pipelineService, PropertyDefaultsStore defaultsStore) {
         this.propertyService = propertyService;
+        this.defaultsStore = defaultsStore;
         availableStatuses.setAll(pipelineService.listStages().stream().map(stage -> stage.name()).collect(Collectors.toList()));
         if (!availableStatuses.isEmpty()) {
             status.set(availableStatuses.get(0));
@@ -66,6 +68,11 @@ public class PropertyViewModel {
 
     public void createProperty() {
         Property p = Property.newProperty();
+        PropertyDefaultsStore.PropertyDefaults defaults = defaultsStore.load();
+        p.setAddress(defaults.address());
+        p.setCity(defaults.city());
+        p.setPostalCode(defaults.postalCode());
+        p.setPropertyType(defaults.propertyType());
         properties.add(0, p);
         selectedProperty.set(p);
     }
