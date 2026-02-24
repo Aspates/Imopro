@@ -66,10 +66,16 @@ public class ImoproApp extends Application {
         contactsButton.setOnAction(event -> {
             contentPane.getChildren().setAll(contactView.getRoot());
         });
-        propertiesButton.setOnAction(event -> contentPane.getChildren().setAll(propertyView.getRoot()));
+        propertiesButton.setOnAction(event -> {
+            propertyView.refresh();
+            contentPane.getChildren().setAll(propertyView.getRoot());
+        });
         tasksButton.setOnAction(event -> contentPane.getChildren().setAll(taskView.getRoot()));
         documentsButton.setOnAction(event -> contentPane.getChildren().setAll(documentView.getRoot()));
-        pipelineButton.setOnAction(event -> contentPane.getChildren().setAll(pipelineView.getRoot()));
+        pipelineButton.setOnAction(event -> {
+            pipelineView.refresh();
+            contentPane.getChildren().setAll(pipelineView.getRoot());
+        });
 
         sidebar.getChildren().addAll(contactsButton, propertiesButton, tasksButton, documentsButton, pipelineButton);
 

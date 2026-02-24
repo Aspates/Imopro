@@ -39,6 +39,10 @@ public class PipelineView {
         return root;
     }
 
+    public void refresh() {
+        viewModel.load();
+    }
+
     private Node buildColumn(PipelineStage stage) {
         VBox col = new VBox(8);
         col.setPadding(new Insets(8));

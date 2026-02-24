@@ -39,6 +39,10 @@ public class PropertyView {
         return root;
     }
 
+    public void refresh() {
+        viewModel.loadProperties();
+    }
+
     private Node buildListPane() {
         VBox container = new VBox(12);
         container.setPrefWidth(320);
