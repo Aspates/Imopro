@@ -144,6 +144,9 @@ public class RentView {
         ComboBox<Integer> dayOfMonth = new ComboBox<>(FXCollections.observableArrayList());
         for (int i = 1; i <= 31; i++) dayOfMonth.getItems().add(i);
         dayOfMonth.setValue(1);
+        ComboBox<Integer> monthOfYear = new ComboBox<>(FXCollections.observableArrayList());
+        for (int i = 1; i <= 12; i++) monthOfYear.getItems().add(i);
+        monthOfYear.setValue(1);
         ComboBox<Integer> monthInPeriod = new ComboBox<>(FXCollections.observableArrayList(1, 2, 3));
         monthInPeriod.setValue(1);
 
