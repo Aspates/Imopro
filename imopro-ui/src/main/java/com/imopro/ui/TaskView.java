@@ -1,6 +1,7 @@
 package com.imopro.ui;
 
 import com.imopro.application.TaskService;
+import com.imopro.application.RentService;
 import com.imopro.domain.TaskItem;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -21,19 +22,20 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class TaskView {
     private final TaskViewModel viewModel;
     private final BorderPane root;
 
-    public TaskView(TaskService taskService) {
-        this.viewModel = new TaskViewModel(taskService);
+    public TaskView(TaskService taskService, RentService rentService, Consumer<UUID> goRent) {
+        this.viewModel = new TaskViewModel(taskService, rentService);
         this.root = new BorderPane();
         root.setPadding(new Insets(16));
         root.getStyleClass().add("content");
         root.setLeft(buildListPane());
-        root.setCenter(buildDetailPane());
+        root.setCenter(buildDetailPane(goRent));
     }
 
     public Node getRoot() {
@@ -91,7 +93,7 @@ public class TaskView {
         return container;
     }
 
-    private Node buildDetailPane() {
+    private Node buildDetailPane(Consumer<UUID> goRent) {
         VBox container = new VBox(12);
         container.setPadding(new Insets(0, 0, 0, 24));
 
@@ -112,6 +114,12 @@ public class TaskView {
         TextField tfStatus = new TextField();
         tfStatus.setPromptText("TODO ou DONE");
         tfStatus.textProperty().bindBidirectional(viewModel.statusProperty());
+        TextField tfType = new TextField();
+        tfType.textProperty().bind(viewModel.typeProperty());
+        tfType.setEditable(false);
+        TextField tfRenewable = new TextField();
+        tfRenewable.textProperty().bind(viewModel.renewableProperty());
+        tfRenewable.setEditable(false);
 
         form.addRow(0, new Label("Titre"), ValidationUtils.attachRegexValidation(tfTitle,
                 Pattern.compile("[\\p{L}0-9\\s,.'\\-/#]{1,120}"), true,
@@ -123,6 +131,9 @@ public class TaskView {
         form.addRow(3, new Label("Statut"), ValidationUtils.attachValidation(tfStatus,
                 value -> value.equals("TODO") || value.equals("DONE"), true,
                 "Valeurs autorisées: TODO ou DONE"));
+
+        form.addRow(4, new Label("Type"), tfType);
+        form.addRow(5, new Label("Renouvelable"), tfRenewable);
 
         HBox actions = new HBox(10);
         Button saveBtn = new Button("Enregistrer");
@@ -138,7 +149,16 @@ public class TaskView {
         deleteBtn.disableProperty().bind(viewModel.canActBinding().not());
         deleteBtn.setOnAction(e -> viewModel.deleteSelectedTask());
 
-        actions.getChildren().addAll(saveBtn, doneBtn, deleteBtn);
+        Button goRentBtn = new Button("Voir loyer");
+        goRentBtn.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> viewModel.selectedTaskRentId() == null,
+                viewModel.selectedTaskProperty()));
+        goRentBtn.setOnAction(e -> {
+            UUID rentId = viewModel.selectedTaskRentId();
+            if (rentId != null) goRent.accept(rentId);
+        });
+
+        actions.getChildren().addAll(saveBtn, doneBtn, deleteBtn, goRentBtn);
 
         container.getChildren().addAll(title, new Separator(), form, actions);
 
@@ -153,4 +173,5 @@ public class TaskView {
         placeholder.managedProperty().bind(placeholder.visibleProperty());
         return wrapper;
     }
+
 }

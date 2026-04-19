@@ -1,6 +1,7 @@
 package com.imopro.ui;
 
 import com.imopro.application.ContactService;
+import com.imopro.application.RentService;
 import com.imopro.domain.Contact;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -20,19 +21,20 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class ContactView {
     private final ContactViewModel viewModel;
     private final BorderPane root;
 
-    public ContactView(ContactService contactService) {
-        this.viewModel = new ContactViewModel(contactService);
+    public ContactView(ContactService contactService, RentService rentService, Consumer<UUID> goRent) {
+        this.viewModel = new ContactViewModel(contactService, rentService);
         this.root = new BorderPane();
         root.setPadding(new Insets(16));
         root.getStyleClass().add("content");
         root.setLeft(buildListPane());
-        root.setCenter(buildDetailPane());
+        root.setCenter(buildDetailPane(goRent));
     }
 
     public Node getRoot() {
@@ -83,7 +85,7 @@ public class ContactView {
         return container;
     }
 
-    private Node buildDetailPane() {
+    private Node buildDetailPane(Consumer<UUID> goRent) {
         VBox container = new VBox(12);
         container.setPadding(new Insets(0, 0, 0, 24));
 
@@ -137,7 +139,16 @@ public class ContactView {
         deleteButton.disableProperty().bind(viewModel.canDeleteBinding().not());
         deleteButton.setOnAction(event -> viewModel.deleteSelectedContact());
 
-        actions.getChildren().addAll(saveButton, deleteButton);
+        Button viewRentButton = new Button("Voir loyer");
+        viewRentButton.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> viewModel.selectedContactRentId() == null,
+                viewModel.selectedContactProperty()));
+        viewRentButton.setOnAction(event -> {
+            UUID rentId = viewModel.selectedContactRentId();
+            if (rentId != null) goRent.accept(rentId);
+        });
+
+        actions.getChildren().addAll(saveButton, deleteButton, viewRentButton);
 
         container.getChildren().addAll(title, new Separator(), form, actions);
 

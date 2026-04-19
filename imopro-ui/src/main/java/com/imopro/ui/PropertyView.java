@@ -2,6 +2,7 @@ package com.imopro.ui;
 
 import com.imopro.application.PipelineService;
 import com.imopro.application.PropertyService;
+import com.imopro.application.RentService;
 import com.imopro.domain.Property;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -21,19 +22,20 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class PropertyView {
     private final PropertyViewModel viewModel;
     private final BorderPane root;
 
-    public PropertyView(PropertyService propertyService, PipelineService pipelineService, PropertyDefaultsStore defaultsStore) {
-        this.viewModel = new PropertyViewModel(propertyService, pipelineService, defaultsStore);
+    public PropertyView(PropertyService propertyService, PipelineService pipelineService, PropertyDefaultsStore defaultsStore, RentService rentService, Consumer<UUID> goRent) {
+        this.viewModel = new PropertyViewModel(propertyService, pipelineService, defaultsStore, rentService);
         this.root = new BorderPane();
         root.setPadding(new Insets(16));
         root.getStyleClass().add("content");
         root.setLeft(buildListPane());
-        root.setCenter(buildDetailPane());
+        root.setCenter(buildDetailPane(goRent));
     }
 
     public Node getRoot() {
@@ -79,7 +81,7 @@ public class PropertyView {
         return container;
     }
 
-    private Node buildDetailPane() {
+    private Node buildDetailPane(Consumer<UUID> goRent) {
         VBox container = new VBox(12);
         container.setPadding(new Insets(0, 0, 0, 24));
 
@@ -106,6 +108,9 @@ public class PropertyView {
         tfRooms.textProperty().bindBidirectional(viewModel.roomsProperty());
         TextField tfPrice = new TextField();
         tfPrice.textProperty().bindBidirectional(viewModel.priceProperty());
+        Label estimatedRentLabel = new Label();
+        estimatedRentLabel.getStyleClass().add("compact-hint");
+        estimatedRentLabel.textProperty().bind(viewModel.estimatedRentLabelProperty());
         ComboBox<String> tfStatus = new ComboBox<>();
         tfStatus.setItems(viewModel.availableStatuses());
         tfStatus.valueProperty().bindBidirectional(viewModel.statusProperty());
@@ -132,9 +137,12 @@ public class PropertyView {
         form.addRow(6, new Label("Pièces"), ValidationUtils.attachRegexValidation(tfRooms,
                 Pattern.compile("\\d{1,3}"), true,
                 "Nombre entier attendu"));
-        form.addRow(7, new Label("Prix"), ValidationUtils.attachRegexValidation(tfPrice,
+        Node validatedPriceField = ValidationUtils.attachRegexValidation(tfPrice,
                 Pattern.compile("\\d{1,10}([.,]\\d{1,2})?"), true,
-                "Nombre (ex: 1200.00)"));
+                "Nombre (ex: 1200.00)");
+        HBox priceWithEstimate = new HBox(10, validatedPriceField, estimatedRentLabel);
+        HBox.setHgrow(validatedPriceField, Priority.ALWAYS);
+        form.addRow(7, new Label("Prix"), priceWithEstimate);
         form.addRow(8, new Label("Statut"), tfStatus);
 
         HBox actions = new HBox(12);
@@ -147,7 +155,16 @@ public class PropertyView {
         deleteButton.getStyleClass().add("danger");
         deleteButton.setOnAction(event -> viewModel.deleteSelected());
 
-        actions.getChildren().addAll(saveButton, deleteButton);
+        Button goRentButton = new Button("Voir loyer");
+        goRentButton.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> viewModel.selectedPropertyRentId() == null,
+                viewModel.selectedPropertyProperty()));
+        goRentButton.setOnAction(event -> {
+            UUID rentId = viewModel.selectedPropertyRentId();
+            if (rentId != null) goRent.accept(rentId);
+        });
+
+        actions.getChildren().addAll(saveButton, deleteButton, goRentButton);
 
         container.getChildren().addAll(title, new Separator(), form, actions);
 

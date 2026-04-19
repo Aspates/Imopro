@@ -1,6 +1,7 @@
 package com.imopro.ui;
 
 import com.imopro.application.ContactService;
+import com.imopro.application.RentService;
 import com.imopro.domain.Contact;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 public class ContactViewModel {
     private final ContactService contactService;
+    private final RentService rentService;
     private final ObservableList<Contact> contacts = FXCollections.observableArrayList();
     private final FilteredList<Contact> filteredContacts = new FilteredList<>(contacts, contact -> true);
     private final ObjectProperty<Contact> selectedContact = new SimpleObjectProperty<>();
@@ -29,8 +31,9 @@ public class ContactViewModel {
     private final StringProperty address = new SimpleStringProperty("");
     private final StringProperty notes = new SimpleStringProperty("");
 
-    public ContactViewModel(ContactService contactService) {
+    public ContactViewModel(ContactService contactService, RentService rentService) {
         this.contactService = contactService;
+        this.rentService = rentService;
         loadContacts();
         selectedContact.addListener((obs, oldContact, newContact) -> populateFields(newContact));
         searchQuery.addListener((obs, oldValue, newValue) -> applyFilter(newValue));
@@ -107,6 +110,16 @@ public class ContactViewModel {
     public void selectById(UUID id) {
         if (id == null) return;
         contacts.stream().filter(c -> c.getId().equals(id)).findFirst().ifPresent(selectedContact::set);
+    }
+
+    public UUID selectedContactRentId() {
+        Contact c = selectedContact.get();
+        if (c == null) return null;
+        return rentService.listRents().stream()
+                .filter(r -> c.getId().equals(r.getContactId()))
+                .map(r -> r.getId())
+                .findFirst()
+                .orElse(null);
     }
 
     public void deleteSelectedContact() {

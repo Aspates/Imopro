@@ -1,6 +1,8 @@
 package com.imopro.ui;
 
 import com.imopro.application.TaskService;
+import com.imopro.application.RentService;
+import com.imopro.domain.RentTaskRule;
 import com.imopro.domain.TaskItem;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -19,6 +21,7 @@ import java.util.UUID;
 
 public class TaskViewModel {
     private final TaskService taskService;
+    private final RentService rentService;
     private final ObservableList<TaskItem> tasks = FXCollections.observableArrayList();
     private final FilteredList<TaskItem> filteredTasks = new FilteredList<>(tasks, t -> true);
     private final ObjectProperty<TaskItem> selectedTask = new SimpleObjectProperty<>();
@@ -28,10 +31,13 @@ public class TaskViewModel {
     private final StringProperty description = new SimpleStringProperty("");
     private final ObjectProperty<LocalDate> dueDate = new SimpleObjectProperty<>();
     private final StringProperty status = new SimpleStringProperty("TODO");
+    private final StringProperty type = new SimpleStringProperty("-");
+    private final StringProperty renewable = new SimpleStringProperty("-");
     private final StringProperty filterMode = new SimpleStringProperty("ALL");
 
-    public TaskViewModel(TaskService taskService) {
+    public TaskViewModel(TaskService taskService, RentService rentService) {
         this.taskService = taskService;
+        this.rentService = rentService;
         loadTasks();
         selectedTask.addListener((obs, oldVal, newVal) -> populateFields(newVal));
         searchQuery.addListener((obs, oldVal, newVal) -> applyFilters());
@@ -45,6 +51,8 @@ public class TaskViewModel {
     public StringProperty descriptionProperty() { return description; }
     public ObjectProperty<LocalDate> dueDateProperty() { return dueDate; }
     public StringProperty statusProperty() { return status; }
+    public StringProperty typeProperty() { return type; }
+    public StringProperty renewableProperty() { return renewable; }
 
     public void loadTasks() {
         List<TaskItem> list = taskService.listTasks();
@@ -73,6 +81,7 @@ public class TaskViewModel {
             if (task.getCompletedAt() == null) {
                 task.setCompletedAt(Instant.now());
             }
+            shiftToNextDueDateIfAutoRenew(task);
         } else {
             task.markTodo();
         }
@@ -88,6 +97,7 @@ public class TaskViewModel {
             return;
         }
         task.markDone();
+        shiftToNextDueDateIfAutoRenew(task);
         status.set("DONE");
         taskService.save(task);
         loadTasks();
@@ -130,12 +140,22 @@ public class TaskViewModel {
             description.set("");
             dueDate.set(null);
             status.set("TODO");
+            type.set("-");
+            renewable.set("-");
             return;
         }
         title.set(task.getTitle() == null ? "" : task.getTitle());
         description.set(task.getDescription() == null ? "" : task.getDescription());
         dueDate.set(task.getDueDate());
         status.set(task.getStatus() == null ? "TODO" : task.getStatus());
+        RentTaskRule rule = resolveRule(task);
+        if (rule == null) {
+            type.set("Ponctuelle");
+            renewable.set("Non");
+        } else {
+            type.set(labelForFrequency(rule.frequency()));
+            renewable.set(rule.autoRenew() ? "Oui" : "Non");
+        }
     }
 
     private void applyFilters() {
@@ -166,4 +186,45 @@ public class TaskViewModel {
     private boolean contains(String value, String q) {
         return value != null && value.toLowerCase().contains(q);
     }
+
+    private void shiftToNextDueDateIfAutoRenew(TaskItem task) {
+        RentTaskRule rule = resolveRule(task);
+        if (rule == null || !rule.autoRenew()) return;
+        LocalDate baseDate = task.getDueDate() == null ? LocalDate.now() : task.getDueDate();
+        task.setDueDate(nextDueDate(baseDate, rule.frequency()));
+    }
+
+    private RentTaskRule resolveRule(TaskItem task) {
+        if (task == null || task.getRentId() == null || task.getRentRuleId() == null) return null;
+        return rentService.listRules(task.getRentId()).stream()
+                .filter(rule -> rule.id().equals(task.getRentRuleId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private LocalDate nextDueDate(LocalDate currentDueDate, String frequency) {
+        return switch (frequency) {
+            case "WEEKLY" -> currentDueDate.plusWeeks(1);
+            case "MONTHLY" -> currentDueDate.plusMonths(1);
+            case "QUARTERLY" -> currentDueDate.plusMonths(3);
+            case "YEARLY" -> currentDueDate.plusYears(1);
+            default -> currentDueDate;
+        };
+    }
+
+    public UUID selectedTaskRentId() {
+        TaskItem task = selectedTask.get();
+        return task == null ? null : task.getRentId();
+    }
+
+    private String labelForFrequency(String code) {
+        return switch (code) {
+            case "WEEKLY" -> "Hebdomadaire";
+            case "MONTHLY" -> "Mensuelle";
+            case "QUARTERLY" -> "Trimestrielle";
+            case "YEARLY" -> "Annuelle";
+            default -> code;
+        };
+    }
+
 }

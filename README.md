@@ -1,18 +1,18 @@
 # Imopro (MVP)
 
-Imopro est une application desktop JavaFX orientée **offline-first** pour un usage immobilier personnel.
+Imopro est une application desktop JavaFX orientée offline-first pour un usage immobilier personnel.
 
-Ce MVP contient actuellement 6 modules fonctionnels :
-- **Contacts**
-- **Biens**
-- **Tâches**
-- **Documents**
-- **Pipeline**
-- **Loyers**
+Le MVP contient 6 modules :
+- Contacts
+- Biens
+- Tâches
+- Documents
+- Pipeline
+- Loyers
 
-L’application suit une architecture modulaire :
+Architecture :
 - `imopro-domain` : entités métier pures
-- `imopro-application` : services / cas d’usage
+- `imopro-application` : services / cas d'usage
 - `imopro-infra` : persistance SQLite + migrations Flyway
 - `imopro-ui` : interface JavaFX (views + viewmodels)
 
@@ -20,223 +20,272 @@ L’application suit une architecture modulaire :
 
 ## Contrôles de saisie (validation en direct)
 
-Dans tous les modules à formulaire (Contacts, Biens, Tâches, Documents), chaque champ texte est validé pendant la saisie.
+Dans les modules à formulaire (Contacts, Biens, Tâches, Documents), les champs sont validés pendant la saisie.
 
-- En cas de valeur invalide, un message d'erreur rouge s'affiche à droite du champ.
-- La fiche de détail à droite n'est affichée que lorsqu'un élément est en cours de création/édition (sinon un message guide l'utilisateur).
-- Les contrôles couvrent les cas usuels :
-  - alphanumérique / texte libre encadré,
-  - numériques uniquement (CP, pièces, taille),
-  - décimaux (surface, prix),
-  - format e-mail,
-  - format MIME,
-  - valeurs contraintes (ex: statut tâche `TODO`/`DONE`).
+- En cas de valeur invalide, un message d'erreur s'affiche à droite du champ.
+- La fiche de détail est affichée uniquement lorsqu'un élément est sélectionné/créé.
+- Contrôles couverts :
+- alphanumérique / texte encadré
+- numériques (CP, pièces, taille)
+- décimaux (surface, prix)
+- format email
+- format MIME
+- valeurs contraintes (ex: statut tâche `TODO`/`DONE`)
 
 ---
 
-## Valeurs par défaut (module Bien)
+## Valeurs par défaut (module Biens)
 
-Une entrée de menu **Paramètres → Valeurs par défaut** permet de définir des valeurs pré-remplies pour la création d'un nouveau bien.
-
-Champs concernés :
+Menu `Paramètres -> Valeurs par défaut` :
 - Adresse
 - Ville
 - CP
 - Type
 
-Ces valeurs sont automatiquement injectées lors d'un clic sur **Nouveau bien**.
+Ces valeurs sont injectées lors de `Nouveau bien`.
 
 ---
 
-## Module Loyer
+## Sauvegarde des informations
 
-Le module Loyer permet de gérer les loyers avec un CRUD, en lien avec un locataire (Contact) et un bien (Property).
+Menu `Paramètres -> Voir sauvegarde` :
+- Affiche le chemin du repertoire de sauvegarde (donnees SQLite + documents attaches).
+- Bouton `Ouvrir répertoire` : ouvre ce dossier dans l'explorateur du système.
+- Bouton `Modifier` : permet de choisir un autre répertoire de sauvegarde.
+
+Notes :
+- Le nouveau chemin est mémorisé pour les prochains lancements de l'application.
+- Le changement s'applique pleinement après fermeture/réouverture de l'application.
+
+---
+
+## Module Loyers
+
+Le module Loyers gère les loyers avec un CRUD, liés à un locataire (Contact) et à un bien (Property).
 
 ### Fonctionnalités
 - CRUD des loyers
-- Jointure vers **Contact** (locataire)
-- Jointure vers **Bien**
-- Règles de tâches automatiques (hebdo/mensuel/trimestriel/annuel) avec renouvellement activable
-- Génération automatique des tâches à échéance depuis les règles actives
-- Boutons de navigation rapide vers Contacts/Biens/Tâches/Documents
+- Jointure vers Contact (locataire)
+- Jointure vers Bien
+- Règles de tâches automatiques (hebdo/mensuel/trimestriel/annuel)
+- Génération automatique de tâches à échéance
+- Navigation vers Contacts/Biens/Tâches
+
+### Règles métier (Loyers)
+- Le bouton `Ajouter règle` ne remplit plus de liste de règles dédiée (supprimée car redondante).
+- `Ajouter règle` crée immédiatement une tâche liée au loyer.
+- Format du titre de la tâche créée : `Titre du bien - Nom complet du contact`.
+- Format de la description : `Tâche générée automatiquement pour le loyer <Titre du bien> du locataire <Nom complet du contact>`.
+- Paramétrage de fréquence :
+- Hebdomadaire : jour de semaine
+- Mensuelle : jour du mois
+- Trimestrielle : jour du mois + période `1..3`
+- Annuelle : jour du mois + mois `1..12`
+- La combobox `1..3` est visible uniquement en trimestriel.
+- La combobox `1..12` est visible uniquement en annuel.
+- Tableau des tâches liées :
+- colonnes `Type`, `Date d'échéance`, `Renouvelable` (`✔` / `✖`) + action vers la tâche
+- ligne rouge : tâche non faite en retard
+- ligne verte : tâche faite non renouvelable
+- Documents liés au loyer :
+- bouton `Ajouter document` (import local, rattachement au loyer)
+- tableau `Nom`, `Date d'ajout`, `Ouvrir document`
+- Synchronisation Bien <-> Loyer :
+- libellé `Montant` (anciennement `Montant mensuel`)
+- `Montant` du loyer et `Prix` du bien doivent être cohérents
+- à l'enregistrement d'un loyer, le prix du bien est mis à jour avec le montant
+- à l'ouverture d'un loyer, le montant est alimenté depuis le prix du bien
+- Navigation dans la fiche loyer :
+- bouton `Voir contact` à droite de la combobox `Locataire`
+- bouton grisé si aucun contact sélectionné
 
 ---
 
-## Module Contact
+## Module Contacts
 
-Le module Contact sert à gérer les personnes (propriétaires, acquéreurs potentiels, partenaires, etc.).
+Le module Contacts gère les personnes (propriétaires, locataires, partenaires, etc.).
 
 ### Ce que fait le module
-- Afficher la liste des contacts.
-- Rechercher un contact rapidement.
-- Créer un nouveau contact.
-- Modifier un contact existant.
-- Supprimer un contact.
+- Afficher la liste des contacts
+- Rechercher un contact
+- Créer un contact
+- Modifier un contact
+- Supprimer un contact
 
-### Rôle de chaque champ (fiche contact)
-- **Prénom** : prénom de la personne.
-- **Nom** : nom de famille.
-- **Téléphone** : numéro principal pour les appels/SMS.
-- **Email** : adresse e-mail de contact.
-- **Adresse** : adresse postale du contact.
-- **Notes** : informations libres (préférences, contexte, historique synthétique, etc.).
+### Champs (fiche contact)
+- Prénom
+- Nom
+- Téléphone
+- Email
+- Adresse
+- Notes
 
-### Rôle de chaque bouton (module Contact)
-- **Nouveau** (colonne de gauche) : crée une fiche contact vide et la sélectionne.
-- **Enregistrer** (fiche à droite) : sauvegarde les modifications du contact dans SQLite.
-- **Supprimer** : supprime définitivement le contact sélectionné.
+### Boutons
+- `Nouveau` : crée une fiche vide et la sélectionne
+- `Enregistrer` : sauvegarde en SQLite
+- `Supprimer` : supprime le contact sélectionné
+- `Voir loyer` : ouvre le loyer associé au contact (si existant)
+- le bouton est grisé s'il n'existe aucun loyer correspondant
 
-### Recherche (liste Contact)
-Le champ de recherche filtre la liste par :
-- nom complet (prénom + nom),
-- email,
-- téléphone.
+### Recherche
+Filtre par :
+- nom complet (prénom + nom)
+- email
+- téléphone
 
 ---
 
-## Module Bien
+## Module Biens
 
-Le module Bien sert à gérer les propriétés immobilières suivies dans l’outil.
+Le module Biens gère les propriétés immobilières.
 
 ### Ce que fait le module
-- Afficher la liste des biens.
-- Rechercher un bien rapidement.
-- Créer un nouveau bien.
-- Modifier un bien existant.
-- Supprimer un bien.
+- Afficher la liste des biens
+- Rechercher un bien
+- Créer un bien
+- Modifier un bien
+- Supprimer un bien
 
-### Rôle de chaque champ (fiche bien)
-- **Titre** : libellé principal du bien (ex. "Appartement T3 centre-ville").
-- **Adresse** : rue et numéro.
-- **Ville** : commune du bien.
-- **CP** : code postal.
-- **Type** : type de bien (appartement, maison, terrain, etc.).
-- **Surface** : surface (m²) en valeur numérique.
-- **Pièces** : nombre de pièces principales.
-- **Prix** : prix demandé/estimé.
-- **Statut** : étape courante du pipeline location (sélection via liste déroulante).
+### Champs (fiche bien)
+- Titre
+- Adresse
+- Ville
+- CP
+- Type
+- Surface
+- Pièces
+- Prix
+- Statut
 
-### Synchronisation Bien ↔ Pipeline
-- Le champ **Statut** est un **ComboBox** alimenté par les étapes du module Pipeline.
-- Changer le statut dans la fiche Bien déplace automatiquement le bien dans la colonne correspondante du Pipeline (et inversement, un mouvement dans le Pipeline met à jour le statut du bien).
+### Synchronisation Bien <-> Pipeline
+- Le champ `Statut` est alimenté par les étapes du module Pipeline.
+- Un changement de statut dans Biens déplace le bien dans la colonne correspondante du Pipeline.
+- Un déplacement dans Pipeline met à jour le statut du bien.
 
-### Rôle de chaque bouton (module Bien)
-- **Nouveau bien** (colonne de gauche) : crée une fiche bien vide et la sélectionne.
-- **Enregistrer** (fiche à droite) : sauvegarde les modifications du bien dans SQLite.
-- **Supprimer** : supprime définitivement le bien sélectionné.
+### Boutons
+- `Nouveau bien`
+- `Enregistrer`
+- `Supprimer`
+- `Voir loyer` : ouvre le loyer associé au bien (si existant)
+- bouton grisé si aucune correspondance
 
-### Recherche (liste Bien)
-Le champ de recherche filtre la liste par :
-- titre,
-- adresse,
-- ville,
-- statut.
+### Recherche
+Filtre par :
+- titre
+- adresse
+- ville
+- statut
 
 ---
 
-## Module Tâche
+## Module Tâches
 
-Le module Tâche sert à piloter les actions quotidiennes et relances.
+Le module Tâches pilote les actions quotidiennes et relances.
 
 ### Ce que fait le module
-- Afficher la liste des tâches.
-- Rechercher une tâche.
-- Créer une nouvelle tâche.
-- Modifier une tâche.
-- Marquer une tâche comme faite.
-- Supprimer une tâche.
-- Filtrer les tâches par vues rapides : **Toutes**, **Aujourd'hui**, **En retard**, **Cette semaine**.
+- Afficher la liste des tâches
+- Rechercher une tâche
+- Créer une tâche
+- Modifier une tâche
+- Marquer une tâche comme faite
+- Supprimer une tâche
+- Filtrer par vues rapides : `Toutes`, `Aujourd'hui`, `En retard`, `Cette semaine`
 
-### Rôle de chaque champ (fiche tâche)
-- **Titre** : intitulé court de l’action.
-- **Description** : détails de la tâche.
-- **Échéance** : date limite au format `YYYY-MM-DD`.
-- **Statut** : `TODO` (à faire) ou `DONE` (fait).
+### Champs (fiche tâche)
+- Titre
+- Description
+- Échéance (`YYYY-MM-DD`)
+- Statut (`TODO` / `DONE`)
+- Type (issu de la règle de loyer, sinon `Ponctuelle`)
+- Renouvelable (`Oui` / `Non`)
 
-### Rôle de chaque bouton (module Tâche)
-- **Nouvelle tâche** : crée une tâche vide et la sélectionne.
-- **Enregistrer** : sauvegarde les modifications de la tâche.
-- **Marquer fait** : passe la tâche en `DONE` et renseigne la date de complétion.
-- **Supprimer** : supprime définitivement la tâche sélectionnée.
-- **Toutes / Aujourd'hui / En retard / Cette semaine** : applique un filtre rapide sur la liste.
+### Boutons
+- `Nouvelle tâche`
+- `Enregistrer`
+- `Marquer fait`
+- `Supprimer`
+- `Voir loyer` : ouvre le loyer lié à la tâche
+- bouton grisé si la tâche n'est pas liée à un loyer
 
-### Recherche (liste Tâche)
-Le champ de recherche filtre la liste par :
-- titre,
-- description,
-- statut.
+### Règle de renouvellement automatique
+Si une tâche liée à une règle auto-renouvelable est marquée `DONE`, l'échéance passe à la prochaine occurrence :
+- hebdomadaire : `+1 semaine`
+- mensuelle : `+1 mois`
+- trimestrielle : `+3 mois`
+- annuelle : `+1 an`
+
+### Recherche
+Filtre par :
+- titre
+- description
+- statut
 
 ---
 
 ## Module Documents
 
-Le module Documents sert à rattacher et consulter des fichiers (PDF, photos, etc.) localement.
+Le module Documents rattache et consulte des fichiers localement.
 
 ### Ce que fait le module
-- Importer un fichier depuis la machine.
-- Copier automatiquement le fichier dans `attachments/` (données locales de l'app).
-- Enregistrer les métadonnées en base SQLite (`document`).
-- Rechercher les documents importés.
-- Ouvrir un document via l'application par défaut du système.
-- Modifier des métadonnées (nom, mime, taille) et supprimer un document.
+- Importer un fichier depuis la machine
+- Copier automatiquement dans `attachments/`
+- Enregistrer les métadonnées en base (`document`)
+- Rechercher les documents
+- Ouvrir un document via l'application par défaut du système
+- Modifier les métadonnées (nom, mime, taille)
+- Supprimer un document
 
-### Rôle de chaque champ (fiche document)
-- **Nom** : nom d'affichage du document.
-- **Chemin relatif** : emplacement relatif dans `attachments/` (lecture seule).
-- **MIME** : type du document (ex. `application/pdf`, `image/jpeg`).
-- **Taille (octets)** : taille du fichier.
+### Champs (fiche document)
+- Nom
+- Chemin relatif (lecture seule)
+- MIME
+- Taille (octets)
 
-### Rôle de chaque bouton (module Documents)
-- **Importer un fichier** : ouvre un sélecteur de fichier et importe le document.
-- **Enregistrer** : sauvegarde les métadonnées modifiées.
-- **Ouvrir** : ouvre le fichier avec l'application par défaut de l'OS.
-- **Supprimer** : supprime le document en base et supprime le fichier local si présent.
+### Boutons
+- `Importer un fichier`
+- `Enregistrer`
+- `Ouvrir`
+- `Supprimer`
 
-### Recherche (liste Documents)
-Le champ de recherche filtre par :
-- nom du fichier,
-- type MIME,
-- chemin relatif.
+### Recherche
+Filtre par :
+- nom du fichier
+- type MIME
+- chemin relatif
 
 ---
 
 ## Module Pipeline
 
-Le module Pipeline propose une vue Kanban simple basée sur les étapes commerciales immobilières.
+Le module Pipeline propose une vue Kanban basée sur les étapes commerciales immobilières.
 
 ### Ce que fait le module
-- Afficher les étapes du pipeline location en colonnes (Prospect locataire → Dossier reçu → Visite planifiée → Dossier complet → Bail à signer → Entrée locataire → Loué/Clos → Archive).
-- Afficher chaque bien dans sa colonne selon son `statut`.
-- Déplacer un bien vers l'étape précédente/suivante via les boutons fléchés (`←` / `→`).
-- Enregistrer chaque changement d'étape dans `pipeline_event` (audit).
-
-### Rôle des éléments UI (module Pipeline)
-- **Colonnes** : représentent les étapes du cycle de location (`pipeline_stage`).
-- **Cartes bien** : chaque carte représente un bien avec son titre/ville.
-- **Bouton ←** : recule la carte d'une étape.
-- **Bouton →** : avance la carte d'une étape.
+- Afficher les étapes en colonnes
+- Afficher les biens selon leur statut
+- Déplacer un bien d'une étape à l'autre (`←` / `→`)
+- Historiser les changements dans `pipeline_event`
 
 ### Données manipulées
-- `property.status` = nom d'étape courante.
-- `pipeline_event` = historique daté des mouvements de colonnes.
+- `property.status` : étape courante
+- `pipeline_event` : historique daté des mouvements
 
 ---
 
-## Navigation de l’application
+## Navigation de l'application
 
 Barre latérale gauche :
-- **Contacts** : ouvre le module Contact.
-- **Biens** : ouvre le module Bien.
-- **Tâches** : ouvre le module Tâche.
-- **Documents** : ouvre le module Documents.
-- **Pipeline** : ouvre le module Pipeline (kanban simple).
-- **Loyers** : ouvre le module Loyer.
+- Contacts
+- Biens
+- Tâches
+- Documents
+- Pipeline
+- Loyers
 
 ---
 
-## Lancer l’application en local
+## Lancer l'application en local
 
-Depuis la racine du dépôt :
+Depuis la racine :
 
 ```bash
 ./gradlew :imopro-ui:run
@@ -248,4 +297,4 @@ Si vous utilisez Gradle installé localement :
 gradle :imopro-ui:run
 ```
 
-> Note : dans certains environnements, une incompatibilité Gradle/JDK peut empêcher la compilation (ex. erreur sur la version de bytecode). Dans ce cas, aligner la version de Gradle avec Java 25 ou utiliser le wrapper Gradle du projet.
+> En cas d'incompatibilité Gradle/JDK (ex: erreur de bytecode), aligner les versions ou utiliser le wrapper Gradle du projet.

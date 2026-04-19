@@ -32,3 +32,8 @@
     -fx-background-color: #ef4444;
     -fx-text-fill: white;
 }
+
+.compact-hint {
+    -fx-font-size: 11px;
+    -fx-text-fill: #6b7280;
+}

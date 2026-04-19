@@ -11,6 +11,7 @@ import com.imopro.domain.Property;
 import com.imopro.domain.Rent;
 import com.imopro.domain.RentTaskRule;
 import com.imopro.domain.TaskItem;
+import com.imopro.infra.LocalDocumentStorage;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -18,9 +19,15 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class RentViewModel {
@@ -29,6 +36,7 @@ public class RentViewModel {
     private final PropertyService propertyService;
     private final TaskService taskService;
     private final DocumentService documentService;
+    private final LocalDocumentStorage storage;
 
     private final ObservableList<Rent> rents = FXCollections.observableArrayList();
     private final ObservableList<Contact> contacts = FXCollections.observableArrayList();
@@ -36,6 +44,7 @@ public class RentViewModel {
     private final ObservableList<RentTaskRule> rules = FXCollections.observableArrayList();
     private final ObservableList<TaskItem> tasks = FXCollections.observableArrayList();
     private final ObservableList<DocumentItem> documents = FXCollections.observableArrayList();
+    private final Map<UUID, RentTaskRule> ruleById = new HashMap<>();
 
     private final ObjectProperty<Rent> selectedRent = new SimpleObjectProperty<>();
     private final ObjectProperty<Contact> selectedContact = new SimpleObjectProperty<>();
@@ -46,14 +55,16 @@ public class RentViewModel {
     private final ObjectProperty<LocalDate> endDate = new SimpleObjectProperty<>();
     private final StringProperty notes = new SimpleStringProperty("");
 
-    public RentViewModel(RentService rentService, ContactService contactService, PropertyService propertyService, TaskService taskService, DocumentService documentService) {
+    public RentViewModel(RentService rentService, ContactService contactService, PropertyService propertyService, TaskService taskService, DocumentService documentService, LocalDocumentStorage storage) {
         this.rentService = rentService;
         this.contactService = contactService;
         this.propertyService = propertyService;
         this.taskService = taskService;
         this.documentService = documentService;
+        this.storage = storage;
         refreshAll();
         selectedRent.addListener((o, a, b) -> populateForm(b));
+        selectedProperty.addListener((o, a, b) -> updateAmountFromSelectedProperty());
     }
 
     public void refreshAll() {
@@ -86,16 +97,28 @@ public class RentViewModel {
         selectedRent.set(r);
     }
 
+    public void selectById(UUID id) {
+        if (id == null) return;
+        rents.stream().filter(r -> r.getId().equals(id)).findFirst().ifPresent(selectedRent::set);
+    }
+
     public void saveRent() {
         Rent r = selectedRent.get();
         if (r == null || selectedContact.get() == null || selectedProperty.get() == null) return;
+        BigDecimal parsedAmount = parse(amount.get());
         r.setContactId(selectedContact.get().getId());
         r.setPropertyId(selectedProperty.get().getId());
-        r.setMonthlyAmount(parse(amount.get()));
+        r.setMonthlyAmount(parsedAmount);
         r.setStartDate(startDate.get());
         r.setEndDate(endDate.get());
         r.setNotes(notes.get());
         rentService.save(r);
+
+        Property p = selectedProperty.get();
+        p.setPrice(parsedAmount);
+        p.touchUpdatedAt();
+        propertyService.save(p);
+
         refreshAll();
         selectedRent.set(rents.stream().filter(it -> it.getId().equals(r.getId())).findFirst().orElse(r));
     }
@@ -110,15 +133,40 @@ public class RentViewModel {
     }
 
     public void addRule(String frequencyCode, boolean autoRenew, Integer dayOfWeek, Integer dayOfMonth, Integer monthOfYear) {
+        if (selectedRent.get() == null) return;
+        if (selectedContact.get() == null || selectedProperty.get() == null) return;
+
+        // Ensure rent exists in DB before linking rule/task rows to it.
+        saveRent();
         Rent r = selectedRent.get();
         if (r == null) return;
+        String propertyTitle = selectedProperty.get().displayTitle();
+        String contactFullName = selectedContact.get().displayName();
+        String taskTitle = propertyTitle + " - " + contactFullName;
+        String taskDescription = "Tâche générée automatiquement pour le loyer " + propertyTitle
+                + " du locataire " + contactFullName;
         RentTaskRule rule = new RentTaskRule(
                 UUID.randomUUID(), r.getId(), frequencyCode, autoRenew,
                 dayOfWeek, dayOfMonth, monthOfYear,
-                "Loyer " + shortId(r.getId()) + " - " + labelForFrequency(frequencyCode),
-                "Tâche générée automatiquement pour le loyer " + shortId(r.getId()),
+                taskTitle,
+                taskDescription,
                 null, true);
-        rentService.saveRule(rule);
+        UUID savedRuleId = null;
+        try {
+            rentService.saveRule(rule);
+            savedRuleId = rule.id();
+        } catch (RuntimeException ignored) {
+            // Do not block linked-task creation if rule persistence fails.
+        }
+
+        TaskItem linkedTask = TaskItem.newTask();
+        linkedTask.setTitle(taskTitle);
+        linkedTask.setDescription(taskDescription);
+        linkedTask.setDueDate(LocalDate.now());
+        linkedTask.setRentId(r.getId());
+        linkedTask.setRentRuleId(savedRuleId);
+        taskService.save(linkedTask);
+
         loadLinked(r);
     }
 
@@ -148,7 +196,7 @@ public class RentViewModel {
         }
         selectedContact.set(contacts.stream().filter(c -> c.getId().equals(r.getContactId())).findFirst().orElse(null));
         selectedProperty.set(properties.stream().filter(p -> p.getId().equals(r.getPropertyId())).findFirst().orElse(null));
-        amount.set(r.getMonthlyAmount() == null ? "" : r.getMonthlyAmount().toPlainString());
+        updateAmountFromSelectedProperty();
         startDate.set(r.getStartDate());
         endDate.set(r.getEndDate());
         notes.set(r.getNotes() == null ? "" : r.getNotes());
@@ -156,11 +204,95 @@ public class RentViewModel {
     }
 
     private void loadLinked(Rent r) {
-        rules.setAll(rentService.listRules(r.getId()));
+        List<RentTaskRule> loadedRules = rentService.listRules(r.getId());
+        rules.setAll(loadedRules);
+        ruleById.clear();
+        loadedRules.forEach(rule -> ruleById.put(rule.id(), rule));
         List<TaskItem> allTasks = taskService.listTasks();
         tasks.setAll(allTasks.stream().filter(t -> r.getId().equals(t.getRentId())).toList());
         List<DocumentItem> allDocs = documentService.listDocuments();
         documents.setAll(allDocs.stream().filter(d -> r.getId().equals(d.getRentId())).toList());
+    }
+
+    public String taskType(TaskItem task) {
+        RentTaskRule rule = resolveRule(task);
+        if (rule == null) return "Ponctuelle";
+        return labelForFrequency(rule.frequency());
+    }
+
+    public String taskDueDateDisplay(TaskItem task) {
+        return task.getDueDate() == null ? "-" : task.getDueDate().toString();
+    }
+
+    public String taskRenewableIcon(TaskItem task) {
+        RentTaskRule rule = resolveRule(task);
+        return rule != null && rule.autoRenew() ? "✔" : "✖";
+    }
+
+    public UUID selectedRentId() {
+        Rent r = selectedRent.get();
+        return r == null ? null : r.getId();
+    }
+
+    public void importDocumentForSelectedRent(Path sourcePath) {
+        UUID rentId = selectedRentId();
+        if (sourcePath == null || rentId == null) return;
+        try {
+            Path rel = storage.importFile(sourcePath);
+            DocumentItem item = DocumentItem.newDocument();
+            item.setFileName(sourcePath.getFileName().toString());
+            item.setFilePath(rel.toString());
+            String detected = Files.probeContentType(sourcePath);
+            item.setMimeType(detected == null ? "application/octet-stream" : detected);
+            item.setSizeBytes(Files.size(sourcePath));
+            item.setRentId(rentId);
+            documentService.save(item);
+            Rent r = selectedRent.get();
+            if (r != null) loadLinked(r);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to import document for rent", e);
+        }
+    }
+
+    public void openLinkedDocument(DocumentItem item) {
+        if (item == null || item.getFilePath() == null || item.getFilePath().isBlank()) return;
+        storage.open(item.getFilePath());
+    }
+
+    public String documentAddedDate(DocumentItem item) {
+        if (item == null || item.getCreatedAt() == null) return "-";
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                .format(item.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate());
+    }
+
+    public boolean isTaskOverdueTodo(TaskItem task) {
+        return task != null
+                && task.getDueDate() != null
+                && task.getDueDate().isBefore(LocalDate.now())
+                && !"DONE".equals(task.getStatus());
+    }
+
+    public boolean isTaskDoneAndNonRenewable(TaskItem task) {
+        return task != null && "DONE".equals(task.getStatus()) && !isTaskRenewable(task);
+    }
+
+    private boolean isTaskRenewable(TaskItem task) {
+        RentTaskRule rule = resolveRule(task);
+        return rule != null && rule.autoRenew();
+    }
+
+    private RentTaskRule resolveRule(TaskItem task) {
+        if (task == null || task.getRentRuleId() == null) return null;
+        return ruleById.get(task.getRentRuleId());
+    }
+
+    private void updateAmountFromSelectedProperty() {
+        Property p = selectedProperty.get();
+        if (p == null || p.getPrice() == null) {
+            amount.set("");
+            return;
+        }
+        amount.set(p.getPrice().toPlainString());
     }
 
     private BigDecimal parse(String v) { try { return (v == null || v.isBlank()) ? null : new BigDecimal(v); } catch (Exception e) { return null; } }
